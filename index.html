@@ -862,7 +862,7 @@ footer {
   <div class="contact-grid">
     <div class="contact-card">
       <div class="contact-label">⚡ Email</div>
-      <div class="contact-value"><a href="mailto:honguyententhanhtruong@gmail.com">honguyententhanhtruong@gmail.com</a></div>
+      <div class="contact-value"><a href="/cdn-cgi/l/email-protection#c1a9aeafa6b4b8a4afb5a4afb5a9a0afa9b5b3b4aeafa681a6aca0a8adefa2aeac"><span class="__cf_email__" data-cfemail="6c0403020b1915090218090218040d0204181e1903020b2c0b010d0500420f0301">[email&#160;protected]</span></a></div>
     </div>
     <div class="contact-card">
       <div class="contact-label">📞 Điện Thoại</div>
@@ -896,79 +896,513 @@ footer {
 </footer>
 
 <script>
-/* ─── STAR FIELD ─── */
+/* ════════════════════════════════════════════════════
+   TIÊN ĐẠO · KIẾM HIỆP  —  3D Animation Engine
+   Canvas 2D với phối cảnh 3D thủ công
+   ════════════════════════════════════════════════════ */
 const canvas = document.getElementById('cosmos');
 const ctx = canvas.getContext('2d');
-let W, H, stars = [], particles = [];
+let W, H;
 
-function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
-resize(); window.addEventListener('resize', resize);
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
 
-// Generate stars
-for (let i = 0; i < 180; i++) {
-  stars.push({
-    x: Math.random(), y: Math.random(),
-    r: Math.random() * 1.2 + 0.2,
-    a: Math.random(),
-    speed: Math.random() * 0.0003 + 0.0001,
-    gold: Math.random() > 0.7
+const PI  = Math.PI;
+const TAU = PI * 2;
+let T = 0; // global time
+
+/* ── Palette ── */
+const GOLD   = (a) => `rgba(201,168,76,${a})`;
+const GOLD2  = (a) => `rgba(232,208,138,${a})`;
+const JADE   = (a) => `rgba(74,158,122,${a})`;
+const JADE2  = (a) => `rgba(109,196,154,${a})`;
+const CRIM   = (a) => `rgba(180,30,30,${a})`;
+const WHITE  = (a) => `rgba(240,235,220,${a})`;
+const BLUE   = (a) => `rgba(100,160,220,${a})`;
+const PURPLE = (a) => `rgba(140,90,200,${a})`;
+
+/* ══════════════════════════════
+   1. STAR FIELD (tinh tú)
+══════════════════════════════ */
+const stars = Array.from({length: 220}, () => ({
+  x: Math.random(),
+  y: Math.random(),
+  r: Math.random() * 1.3 + 0.15,
+  phase: Math.random() * TAU,
+  speed: Math.random() * 0.0004 + 0.00008,
+  gold: Math.random() > 0.72,
+  twinkle: Math.random() * 0.5 + 0.5
+}));
+
+/* ══════════════════════════════
+   2. FLYING SWORDS (phi kiếm 3D)
+   Mỗi kiếm bay theo quỹ đạo elíp trong không gian 3D
+══════════════════════════════ */
+class FlyingSword {
+  constructor(i) {
+    this.id      = i;
+    this.orbitR  = 180 + Math.random() * 260;   // bán kính quỹ đạo
+    this.orbitTilt = (Math.random() - 0.5) * 0.9; // nghiêng trục
+    this.orbitPhase = Math.random() * TAU;
+    this.speed   = (0.003 + Math.random() * 0.004) * (Math.random()>0.5?1:-1);
+    this.len     = 55 + Math.random() * 40;      // độ dài kiếm
+    this.wid     = 2.5 + Math.random() * 1.5;    // bề rộng kiếm
+    this.type    = Math.floor(Math.random() * 3); // 0=vàng 1=ngọc 2=đỏ
+    this.glowPh  = Math.random() * TAU;
+    this.trailPts= [];
+    this.angle   = this.orbitPhase;
+    // 3D orbit axis
+    this.axisX   = Math.random() * 0.6 - 0.3;
+    this.axisY   = 1;
+    this.axisZ   = Math.random() * 0.6 - 0.3;
+    // normalize
+    const n = Math.sqrt(this.axisX**2+this.axisY**2+this.axisZ**2);
+    this.axisX/=n; this.axisY/=n; this.axisZ/=n;
+    this.centerX = 0; // will be set per-frame relative to W/2
+    this.centerY = 0;
+  }
+
+  /* Rodrigues rotation: point around axis by angle */
+  rotate3D(px, py, pz, ang) {
+    const c = Math.cos(ang), s = Math.sin(ang);
+    const d = this.axisX*px + this.axisY*py + this.axisZ*pz;
+    return {
+      x: px*c + (this.axisY*pz - this.axisZ*py)*s + this.axisX*d*(1-c),
+      y: py*c + (this.axisZ*px - this.axisX*pz)*s + this.axisY*d*(1-c),
+      z: pz*c + (this.axisX*py - this.axisY*px)*s + this.axisZ*d*(1-c)
+    };
+  }
+
+  /* Project 3D → 2D với phối cảnh */
+  project(p, cx, cy) {
+    const fov  = 600;
+    const z    = p.z + 700;
+    const scale= fov / Math.max(z, 1);
+    return { x: cx + p.x * scale, y: cy + p.y * scale, scale };
+  }
+
+  update() {
+    this.angle += this.speed;
+    // Position on orbit circle (in 3D)
+    const px3 = this.orbitR * Math.cos(this.angle);
+    const py3 = this.orbitR * Math.sin(this.angle) * 0.35; // flatten
+    const pz3 = this.orbitR * Math.sin(this.angle) * this.orbitTilt;
+
+    const rot  = this.rotate3D(px3, py3, pz3, T * 0.05);
+    this.pos3  = rot;
+
+    // Trail
+    this.trailPts.push({...rot});
+    if (this.trailPts.length > 18) this.trailPts.shift();
+  }
+
+  draw(cx, cy) {
+    const p    = this.project(this.pos3, cx, cy);
+    const sc   = p.scale * 0.65;
+    if (sc < 0.05) return;
+
+    // Sword direction follows orbit tangent
+    const tang = { x: -Math.sin(this.angle), y: Math.cos(this.angle)*0.35 };
+    const len  = tang.x**2 + tang.y**2;
+    const tn   = len > 0 ? Math.sqrt(len) : 1;
+    const dx   = tang.x / tn;
+    const dy   = tang.y / tn;
+
+    const glow = Math.sin(T * 1.8 + this.glowPh) * 0.35 + 0.65;
+    const alpha= Math.min(1, sc * 1.6) * glow;
+
+    let col1, col2, col3;
+    if      (this.type === 0) { col1=GOLD(alpha);   col2=GOLD2(alpha*0.6); col3=WHITE(alpha*0.9); }
+    else if (this.type === 1) { col1=JADE(alpha);   col2=JADE2(alpha*0.6); col3=WHITE(alpha*0.9); }
+    else                      { col1=CRIM(alpha);   col2=PURPLE(alpha*0.6); col3=WHITE(alpha*0.9); }
+
+    const lsc  = this.len * sc;
+    const wsc  = this.wid * sc;
+
+    /* ── Trail (vệt kiếm khí) ── */
+    if (this.trailPts.length > 2) {
+      for (let i = 1; i < this.trailPts.length; i++) {
+        const tp  = this.project(this.trailPts[i],   cx, cy);
+        const tp0 = this.project(this.trailPts[i-1], cx, cy);
+        const frac= i / this.trailPts.length;
+        ctx.beginPath();
+        ctx.moveTo(tp0.x, tp0.y);
+        ctx.lineTo(tp.x, tp.y);
+        ctx.strokeStyle = this.type===0 ? GOLD(frac * 0.25 * alpha)
+                        : this.type===1 ? JADE(frac * 0.25 * alpha)
+                        : CRIM(frac * 0.25 * alpha);
+        ctx.lineWidth  = wsc * frac * 0.7;
+        ctx.lineCap    = 'round';
+        ctx.stroke();
+      }
+    }
+
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    const ang2D = Math.atan2(dy * sc, dx);
+    ctx.rotate(ang2D);
+
+    /* ── Kiếm body ── */
+    // Bóng mờ
+    ctx.shadowColor = this.type===0 ? '#c9a84c' : this.type===1 ? '#4a9e7a' : '#b41e1e';
+    ctx.shadowBlur  = 12 * sc * glow;
+
+    // Thân kiếm (blade)
+    ctx.beginPath();
+    ctx.moveTo(-lsc * 0.35, 0);
+    ctx.lineTo(lsc * 0.6, -wsc * 0.4);
+    ctx.lineTo(lsc * 0.8, 0);          // đầu kiếm
+    ctx.lineTo(lsc * 0.6, wsc * 0.4);
+    ctx.closePath();
+    const blade = ctx.createLinearGradient(-lsc*0.35, 0, lsc*0.8, 0);
+    blade.addColorStop(0, col2);
+    blade.addColorStop(0.4, col3);
+    blade.addColorStop(1, col1);
+    ctx.fillStyle = blade;
+    ctx.fill();
+
+    // Đường sáng giữa kiếm
+    ctx.beginPath();
+    ctx.moveTo(-lsc * 0.3, 0);
+    ctx.lineTo(lsc * 0.75, 0);
+    ctx.strokeStyle = WHITE(alpha * 0.8);
+    ctx.lineWidth = wsc * 0.25;
+    ctx.shadowBlur = 6 * sc;
+    ctx.stroke();
+
+    // Tay cầm kiếm (hilt)
+    ctx.fillStyle = col1;
+    ctx.fillRect(-lsc*0.45, -wsc*0.9, lsc*0.14, wsc*1.8);
+    // Bảo vệ tay (guard)
+    ctx.fillStyle = col2;
+    ctx.fillRect(-lsc*0.38, -wsc*1.6, wsc*0.6, wsc*3.2);
+
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+}
+
+/* ══════════════════════════════
+   3. RỒNG LỬA (dragon serpent)
+   Dây xích điểm tạo thành thân rồng uốn lượn
+══════════════════════════════ */
+class DragonTrail {
+  constructor(color, cx, cy, speed, radius, phase, segments) {
+    this.color    = color;
+    this.speed    = speed;
+    this.radius   = radius;
+    this.phase    = phase;
+    this.segments = segments;
+    this.pts      = [];
+    this.angle    = phase;
+    this.cx       = cx; // relative offset ratio
+    this.cy       = cy;
+    // secondary oscillation
+    this.waveAmp  = 60 + Math.random() * 80;
+    this.waveFreq = 0.8 + Math.random() * 1.2;
+    this.waveOff  = Math.random() * TAU;
+    this.lifetime = 0;
+  }
+
+  update(W, H) {
+    this.angle  += this.speed;
+    this.lifetime += 1;
+    const cx = W * this.cx;
+    const cy = H * this.cy;
+    const wave = Math.sin(T * this.waveFreq + this.waveOff) * this.waveAmp;
+    const x = cx + Math.cos(this.angle) * this.radius + Math.cos(this.angle * 0.3 + this.waveOff) * wave;
+    const y = cy + Math.sin(this.angle) * this.radius * 0.42 + Math.sin(this.angle * 0.4) * wave * 0.5;
+    this.pts.push({x, y});
+    if (this.pts.length > this.segments) this.pts.shift();
+  }
+
+  draw() {
+    if (this.pts.length < 4) return;
+    for (let i = 1; i < this.pts.length; i++) {
+      const frac = i / this.pts.length;
+      const a    = frac * frac * 0.55;
+      const r    = (1 - frac) * 4 + frac * 0.5;
+      ctx.beginPath();
+      ctx.moveTo(this.pts[i-1].x, this.pts[i-1].y);
+      ctx.lineTo(this.pts[i].x, this.pts[i].y);
+      ctx.strokeStyle = this.color(a);
+      ctx.lineWidth   = r;
+      ctx.lineCap     = 'round';
+      ctx.shadowColor = this.color(0.4);
+      ctx.shadowBlur  = 8 * frac;
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+
+    // Đầu rồng — điểm sáng
+    const head = this.pts[this.pts.length - 1];
+    if (!head) return;
+    const glow = Math.sin(T * 3 + this.phase) * 0.4 + 0.6;
+    ctx.beginPath();
+    ctx.arc(head.x, head.y, 3.5, 0, TAU);
+    ctx.fillStyle = this.color(0.9 * glow);
+    ctx.shadowColor= this.color(0.8);
+    ctx.shadowBlur = 14;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+}
+
+/* ══════════════════════════════
+   4. TRẬN PHÁP VÒNG TRÒN (formation circles)
+   Các vòng bát quái + rune xoay
+══════════════════════════════ */
+class FormationRing {
+  constructor(cx, cy, r, speed, color, runes, type) {
+    this.cx    = cx;   // ratio 0-1
+    this.cy    = cy;
+    this.r     = r;
+    this.speed = speed;
+    this.color = color;
+    this.runes = runes;
+    this.type  = type;  // 0=solid 1=dashed 2=dotted
+    this.rot   = Math.random() * TAU;
+    this.pulse = Math.random() * TAU;
+  }
+
+  draw(W, H) {
+    this.rot += this.speed;
+    const x = W * this.cx;
+    const y = H * this.cy;
+    const glow = Math.sin(T * 1.2 + this.pulse) * 0.3 + 0.7;
+    const a    = 0.12 * glow;
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(this.rot);
+
+    // Main ring
+    ctx.beginPath();
+    ctx.arc(0, 0, this.r, 0, TAU);
+    if (this.type === 1) ctx.setLineDash([12, 8]);
+    else if (this.type === 2) ctx.setLineDash([3, 6]);
+    ctx.strokeStyle = this.color(a * 2);
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Inner ring
+    ctx.beginPath();
+    ctx.arc(0, 0, this.r * 0.75, 0, TAU);
+    ctx.strokeStyle = this.color(a * 1.4);
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+
+    // Rune markers on ring
+    for (let i = 0; i < this.runes; i++) {
+      const ang = (i / this.runes) * TAU;
+      const rx  = Math.cos(ang) * this.r;
+      const ry  = Math.sin(ang) * this.r;
+      ctx.beginPath();
+      ctx.arc(rx, ry, 2.5, 0, TAU);
+      ctx.fillStyle = this.color(a * 4 * glow);
+      ctx.fill();
+      // Line to center
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(rx * 0.72, ry * 0.72);
+      ctx.strokeStyle = this.color(a * 0.8);
+      ctx.lineWidth = 0.4;
+      ctx.stroke();
+    }
+
+    // Hexagram star
+    if (this.type === 0) {
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a1 = (i / 6) * TAU;
+        const a2 = ((i + 0.5) / 6) * TAU;
+        const ox = Math.cos(a1) * this.r * 0.65;
+        const oy = Math.sin(a1) * this.r * 0.65;
+        const ix = Math.cos(a2) * this.r * 0.32;
+        const iy = Math.sin(a2) * this.r * 0.32;
+        i === 0 ? ctx.moveTo(ox, oy) : ctx.lineTo(ox, oy);
+        ctx.lineTo(ix, iy);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = this.color(a * 1.6);
+      ctx.lineWidth = 0.6;
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+}
+
+/* ══════════════════════════════
+   5. LINH KHÍ PARTICLES (qi orbs)
+══════════════════════════════ */
+const qiOrbs = Array.from({length: 55}, () => ({
+  x: Math.random() * 100,
+  y: Math.random() * 100,
+  vx: (Math.random() - 0.5) * 0.035,
+  vy: (Math.random() - 0.5) * 0.025 - 0.008, // drift up
+  r: Math.random() * 2.2 + 0.4,
+  a: Math.random() * 0.45 + 0.05,
+  phase: Math.random() * TAU,
+  color: Math.random() < 0.45 ? 0 : Math.random() < 0.6 ? 1 : Math.random() < 0.5 ? 2 : 3,
+  // 0=gold 1=jade 2=blue 3=purple
+}));
+
+/* ══════════════════════════════
+   6. KIẾM KHÍ SLASH EFFECTS
+   Thỉnh thoảng xuất hiện vệt chém sáng
+══════════════════════════════ */
+const slashes = [];
+function spawnSlash() {
+  const side = Math.random() > 0.5;
+  slashes.push({
+    x1: Math.random() * W,
+    y1: Math.random() * H * 0.8,
+    life: 1.0,
+    angle: (Math.random() - 0.5) * PI * 0.6 - PI * 0.25,
+    len: 80 + Math.random() * 160,
+    color: Math.random() < 0.5 ? GOLD : Math.random() < 0.5 ? JADE : WHITE,
+    decay: 0.025 + Math.random() * 0.03
   });
 }
 
-// Floating qi particles
-for (let i = 0; i < 30; i++) {
-  particles.push({
-    x: Math.random() * 100, y: Math.random() * 100,
-    vx: (Math.random() - 0.5) * 0.04,
-    vy: (Math.random() - 0.5) * 0.04,
-    r: Math.random() * 2 + 0.5,
-    a: Math.random() * 0.4 + 0.05,
-    jade: Math.random() > 0.5,
-    phase: Math.random() * Math.PI * 2
-  });
-}
+/* ══════════════════════════════
+   KHỞI TẠO CÁC ĐỐI TƯỢNG
+══════════════════════════════ */
+// 7 thanh kiếm bay
+const swords = Array.from({length: 7}, (_, i) => new FlyingSword(i));
 
-let t = 0;
+// 4 rồng tiên: vàng + ngọc + đỏ + tím
+const dragons = [
+  new DragonTrail(GOLD,   0.3, 0.35, 0.006,  340, 0,          70),
+  new DragonTrail(JADE,   0.7, 0.55, -0.005, 280, PI * 0.7,   60),
+  new DragonTrail(CRIM,   0.5, 0.25, 0.008,  200, PI * 1.4,   50),
+  new DragonTrail(PURPLE, 0.5, 0.7,  -0.007, 380, PI * 0.3,   80),
+];
+
+// Trận pháp vòng tròn
+const rings = [
+  new FormationRing(0.5, 0.42, 220, 0.0008, GOLD,   8, 0),
+  new FormationRing(0.5, 0.42, 160, -0.0012, JADE,   6, 1),
+  new FormationRing(0.5, 0.42, 290, 0.0005, GOLD2,  12, 2),
+  new FormationRing(0.22, 0.28, 90, 0.002,  JADE,   4, 1),
+  new FormationRing(0.78, 0.65, 80, -0.0018, GOLD,  4, 2),
+  new FormationRing(0.15, 0.7,  60, 0.003,  PURPLE, 3, 0),
+  new FormationRing(0.85, 0.3,  70, -0.0025, CRIM,  3, 1),
+];
+
+/* ══════════════════════════════
+   MAIN DRAW LOOP
+══════════════════════════════ */
+let lastSlash = 0;
+
 function draw() {
   ctx.clearRect(0, 0, W, H);
-  t += 0.01;
+  T += 0.012;
 
-  // Stars
+  const cx = W / 2;
+  const cy = H * 0.42;
+
+  /* 1 ── Stars */
   stars.forEach(s => {
-    s.a += s.speed;
-    const alpha = (Math.sin(s.a) * 0.5 + 0.5) * 0.6 + 0.1;
+    s.phase += s.speed;
+    const alpha = (Math.sin(s.phase) * 0.5 + 0.5) * s.twinkle * 0.65 + 0.06;
+    const r2    = s.r * (1 + Math.sin(s.phase * 2) * 0.25);
     ctx.beginPath();
-    ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
-    ctx.fillStyle = s.gold ? `rgba(201,168,76,${alpha})` : `rgba(200,220,255,${alpha * 0.5})`;
+    ctx.arc(s.x * W, s.y * H, r2, 0, TAU);
+    ctx.fillStyle = s.gold ? GOLD(alpha) : BLUE(alpha * 0.6);
+    ctx.fill();
+    // Thỉnh thoảng thêm tia sáng chữ thập
+    if (s.r > 0.9 && Math.sin(s.phase * 3) > 0.8) {
+      const sa = alpha * 0.5;
+      ctx.strokeStyle = s.gold ? GOLD(sa) : BLUE(sa);
+      ctx.lineWidth = 0.5;
+      const px = s.x * W, py = s.y * H, sr = s.r * 4;
+      ctx.beginPath(); ctx.moveTo(px-sr,py); ctx.lineTo(px+sr,py); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(px,py-sr); ctx.lineTo(px,py+sr); ctx.stroke();
+    }
+  });
+
+  /* 2 ── Formation rings */
+  rings.forEach(r => r.draw(W, H));
+
+  /* 3 ── Dragon trails */
+  dragons.forEach(d => { d.update(W, H); d.draw(); });
+
+  /* 4 ── Flying swords */
+  swords.forEach(s => { s.update(); s.draw(cx, cy); });
+
+  /* 5 ── Qi orbs */
+  qiOrbs.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < -2) p.x = 102; if (p.x > 102) p.x = -2;
+    if (p.y < -5) p.y = 105; if (p.y > 105) p.y = -5;
+    const pulse = Math.sin(T * 2.2 + p.phase) * 0.35 + 0.65;
+    const a     = p.a * pulse;
+    const col   = p.color === 0 ? GOLD(a) : p.color === 1 ? JADE(a) : p.color === 2 ? BLUE(a * 0.8) : PURPLE(a * 0.7);
+    const gcol  = p.color === 0 ? GOLD(a*0.12) : p.color === 1 ? JADE(a*0.12) : p.color === 2 ? BLUE(a*0.1) : PURPLE(a*0.1);
+    const px    = p.x / 100 * W;
+    const py    = p.y / 100 * H;
+    // Glow halo
+    ctx.beginPath();
+    ctx.arc(px, py, p.r * 4.5, 0, TAU);
+    ctx.fillStyle = gcol;
+    ctx.fill();
+    // Core
+    ctx.beginPath();
+    ctx.arc(px, py, p.r, 0, TAU);
+    ctx.fillStyle = col;
     ctx.fill();
   });
 
-  // Qi particles
-  particles.forEach(p => {
-    p.x += p.vx; p.y += p.vy;
-    if (p.x < 0) p.x = 100; if (p.x > 100) p.x = 0;
-    if (p.y < 0) p.y = 100; if (p.y > 100) p.y = 0;
-    const pulse = Math.sin(t + p.phase) * 0.3 + 0.7;
-    const color = p.jade ? `rgba(74,158,122,${p.a * pulse})` : `rgba(201,168,76,${p.a * pulse * 0.7})`;
+  /* 6 ── Slash effects (kiếm khí) */
+  if (T - lastSlash > 1.8 + Math.random() * 2.5) {
+    spawnSlash();
+    lastSlash = T;
+    if (Math.random() > 0.6) spawnSlash(); // double slash
+  }
+  for (let i = slashes.length - 1; i >= 0; i--) {
+    const sl = slashes[i];
+    sl.life -= sl.decay;
+    if (sl.life <= 0) { slashes.splice(i, 1); continue; }
+    const life2 = sl.life * sl.life;
+    ctx.save();
+    ctx.translate(sl.x1, sl.y1);
+    ctx.rotate(sl.angle);
+    // Main slash line
     ctx.beginPath();
-    ctx.arc(p.x / 100 * W, p.y / 100 * H, p.r, 0, Math.PI * 2);
-    ctx.fillStyle = color;
-    ctx.fill();
-    // Glow
+    ctx.moveTo(0, 0);
+    ctx.lineTo(sl.len, 0);
+    ctx.strokeStyle = sl.color(life2 * 0.85);
+    ctx.lineWidth   = 2.5 * sl.life;
+    ctx.lineCap     = 'round';
+    ctx.shadowColor = sl.color(0.6);
+    ctx.shadowBlur  = 16 * sl.life;
+    ctx.stroke();
+    // Wide glow layer
     ctx.beginPath();
-    ctx.arc(p.x / 100 * W, p.y / 100 * H, p.r * 3, 0, Math.PI * 2);
-    ctx.fillStyle = p.jade ? `rgba(74,158,122,${p.a * pulse * 0.1})` : `rgba(201,168,76,${p.a * pulse * 0.08})`;
-    ctx.fill();
-  });
+    ctx.moveTo(-10, 0);
+    ctx.lineTo(sl.len + 10, 0);
+    ctx.strokeStyle = sl.color(life2 * 0.2);
+    ctx.lineWidth   = 14 * sl.life;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
 
   requestAnimationFrame(draw);
 }
 draw();
 
-/* ─── SCROLL REVEAL ─── */
+/* ── SCROLL REVEAL ── */
 const reveals = document.querySelectorAll('.reveal');
 const observer = new IntersectionObserver(entries => {
-  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
 }, { threshold: 0.12 });
 reveals.forEach(el => observer.observe(el));
 </script>
