@@ -1,204 +1,617 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nguyen Thanh Truong — Developer</title>
+<title>Nguyễn Thanh Trường — Tiên Đạo Lập Trình</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;700;900&family=Ma+Shan+Zheng&family=Cinzel:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
+
 :root {
-  --black: #0d0d0d;
-  --white: #f8f7f4;
-  --gray-100: #f0eeea;
-  --gray-200: #dddbd5;
-  --gray-400: #9c9890;
-  --gray-600: #5a5855;
-  --serif: 'DM Serif Display', Georgia, serif;
-  --mono: 'DM Mono', monospace;
-  --sans: 'DM Sans', sans-serif;
+  --ink: #0a0c14;
+  --parchment: #f5f0e8;
+  --gold: #c9a84c;
+  --gold-light: #e8d08a;
+  --gold-dim: #7a6230;
+  --jade: #4a9e7a;
+  --jade-light: #6dc49a;
+  --crimson: #8b1a1a;
+  --mist: #8fa8b8;
+  --deep: #0d1420;
+  --panel: rgba(10,12,20,0.92);
+  --glow: 0 0 30px rgba(201,168,76,0.25);
+  --serif: 'Cinzel', 'Noto Serif SC', Georgia, serif;
+  --brush: 'Ma Shan Zheng', cursive;
+  --body: 'Noto Sans SC', sans-serif;
 }
-body { font-family: var(--sans); background: var(--white); color: var(--black); font-size: 16px; line-height: 1.65; }
 
-/* NAV */
+body {
+  font-family: var(--body);
+  background: var(--deep);
+  color: var(--parchment);
+  font-size: 16px;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ─── PARTICLE CANVAS ─── */
+#cosmos { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+/* ─── SCROLLING MIST ─── */
+.mist-layer {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  background: radial-gradient(ellipse at 20% 80%, rgba(74,158,122,0.04) 0%, transparent 60%),
+              radial-gradient(ellipse at 80% 20%, rgba(201,168,76,0.05) 0%, transparent 55%),
+              radial-gradient(ellipse at 50% 50%, rgba(13,20,32,0.5) 0%, transparent 100%);
+}
+
+/* ─── NAV ─── */
 nav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 99;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 999;
   display: flex; justify-content: space-between; align-items: center;
-  padding: 1.1rem 2.5rem;
-  background: rgba(248,247,244,0.93);
-  border-bottom: 1px solid var(--gray-200);
-  backdrop-filter: blur(10px);
+  padding: 1rem 3rem;
+  background: rgba(10,12,20,0.88);
+  border-bottom: 1px solid rgba(201,168,76,0.2);
+  backdrop-filter: blur(16px);
 }
-.nav-id { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gray-400); }
-.nav-links { display: flex; gap: 2rem; list-style: none; }
-.nav-links a { font-size: 0.82rem; font-weight: 500; color: var(--gray-600); text-decoration: none; letter-spacing: 0.03em; transition: color .2s; }
-.nav-links a:hover { color: var(--black); }
+.nav-seal {
+  font-family: var(--serif);
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-shadow: 0 0 10px rgba(201,168,76,0.5);
+}
+.nav-links { display: flex; gap: 2.5rem; list-style: none; }
+.nav-links a {
+  font-family: var(--serif);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(245,240,232,0.5);
+  text-decoration: none;
+  transition: color .3s, text-shadow .3s;
+}
+.nav-links a:hover { color: var(--gold); text-shadow: 0 0 12px rgba(201,168,76,0.6); }
 
-/* HERO */
-.hero { min-height: 100vh; display: grid; grid-template-columns: 1.1fr 0.9fr; padding-top: 56px; }
+/* ─── HERO ─── */
+.hero {
+  position: relative; z-index: 10;
+  min-height: 100vh;
+  display: grid; grid-template-columns: 1.2fr 0.8fr;
+  padding-top: 60px;
+}
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M30 0 L60 30 L30 60 L0 30 Z' fill='none' stroke='rgba(201,168,76,0.04)' stroke-width='1'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
 .hero-left {
   display: flex; flex-direction: column; justify-content: center;
-  padding: 5rem 3rem 5rem 2.5rem;
-  border-right: 1px solid var(--gray-200);
+  padding: 6rem 4rem 6rem 3rem;
+  border-right: 1px solid rgba(201,168,76,0.15);
+  position: relative;
 }
-.hero-right { display: flex; flex-direction: column; justify-content: flex-end; padding: 3rem 2.5rem; }
+.hero-right {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 4rem 3rem;
+  position: relative;
+}
 
-.eyebrow { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gray-400); margin-bottom: 1.25rem; opacity: 0; animation: up .5s .05s forwards; }
-.hero-name { font-family: var(--serif); font-size: clamp(2.8rem, 4.5vw, 4.2rem); line-height: 1.05; letter-spacing: -0.025em; margin-bottom: 0.5rem; opacity: 0; animation: up .5s .15s forwards; }
-.hero-name em { font-style: italic; color: var(--gray-400); }
-.hero-role { font-family: var(--serif); font-style: italic; font-size: clamp(1rem, 1.8vw, 1.4rem); color: var(--gray-400); margin-bottom: 2rem; opacity: 0; animation: up .5s .22s forwards; }
-.hero-bio { font-size: 0.95rem; color: var(--gray-600); max-width: 460px; line-height: 1.8; margin-bottom: 2.5rem; opacity: 0; animation: up .5s .3s forwards; }
-.hero-bio strong { color: var(--black); font-weight: 500; }
+/* Dragon ornament top */
+.hero-left::before {
+  content: '⚔';
+  position: absolute; top: 4rem; left: 3rem;
+  font-size: 0.8rem; color: rgba(201,168,76,0.3);
+  letter-spacing: 0.2em;
+}
 
-.cta-row { display: flex; gap: 1rem; flex-wrap: wrap; opacity: 0; animation: up .5s .38s forwards; }
-.btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.65rem 1.4rem; font-size: 0.82rem; font-weight: 500; letter-spacing: 0.04em; text-decoration: none; border: 1.5px solid var(--black); border-radius: 2px; transition: all .2s; cursor: pointer; font-family: var(--sans); }
-.btn-primary { background: var(--black); color: var(--white); }
-.btn-primary:hover { background: var(--gray-600); border-color: var(--gray-600); }
-.btn-outline { background: transparent; color: var(--black); }
-.btn-outline:hover { background: var(--black); color: var(--white); }
+.realm-badge {
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  font-family: var(--serif); font-size: 0.62rem;
+  letter-spacing: 0.25em; text-transform: uppercase;
+  color: var(--jade); margin-bottom: 1.5rem;
+  opacity: 0; animation: ascend .6s .1s forwards;
+}
+.realm-badge::before, .realm-badge::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(to right, transparent, var(--jade), transparent);
+  width: 2rem;
+}
 
-.stats-strip { display: flex; flex-direction: column; gap: 2rem; opacity: 0; animation: up .5s .45s forwards; }
-.stat-item { border-top: 1px solid var(--gray-200); padding-top: 1.25rem; }
-.stat-number { font-family: var(--serif); font-size: 3rem; line-height: 1; letter-spacing: -0.04em; margin-bottom: 0.3rem; }
-.stat-label { font-size: 0.78rem; color: var(--gray-400); letter-spacing: 0.05em; text-transform: uppercase; }
+.hero-name {
+  font-family: var(--brush);
+  font-size: clamp(3rem, 5.5vw, 5rem);
+  line-height: 1.0;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 20px rgba(201,168,76,0.4));
+  opacity: 0; animation: ascend .7s .2s forwards;
+}
 
-.availability { display: inline-flex; align-items: center; gap: 0.5rem; font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray-600); margin-top: 3rem; padding: 0.5rem 1rem; border: 1px solid var(--gray-200); border-radius: 100px; align-self: flex-start; }
-.dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; animation: pulse 2s infinite; flex-shrink: 0; }
-@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+.hero-title-zh {
+  font-family: var(--brush);
+  font-size: clamp(1rem, 1.6vw, 1.3rem);
+  color: rgba(201,168,76,0.55);
+  margin-bottom: 0.3rem;
+  letter-spacing: 0.2em;
+  opacity: 0; animation: ascend .6s .28s forwards;
+}
 
-/* SECTIONS */
-section { padding: 5rem 2.5rem; border-top: 1px solid var(--gray-200); }
-.section-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3rem; }
-.section-title { font-family: var(--serif); font-size: clamp(1.8rem, 3vw, 2.5rem); line-height: 1.1; letter-spacing: -0.02em; }
-.section-num { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.12em; color: var(--gray-400); }
+.hero-role {
+  font-family: var(--serif);
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--mist);
+  margin-bottom: 2rem;
+  opacity: 0; animation: ascend .6s .35s forwards;
+}
 
-/* SKILLS */
-.skills-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--gray-200); }
-.skill-group { padding: 1.75rem 1.5rem; border-right: 1px solid var(--gray-200); border-bottom: 1px solid var(--gray-200); }
+.hero-bio {
+  font-size: 0.92rem;
+  color: rgba(245,240,232,0.65);
+  max-width: 500px;
+  line-height: 1.9;
+  margin-bottom: 2.5rem;
+  border-left: 2px solid rgba(201,168,76,0.3);
+  padding-left: 1.25rem;
+  opacity: 0; animation: ascend .6s .42s forwards;
+}
+.hero-bio strong { color: var(--gold-light); font-weight: 500; }
+
+.cta-row { display: flex; gap: 1rem; flex-wrap: wrap; opacity: 0; animation: ascend .6s .5s forwards; }
+.btn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.7rem 1.6rem;
+  font-family: var(--serif); font-size: 0.7rem;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  text-decoration: none; cursor: pointer;
+  transition: all .3s; position: relative; overflow: hidden;
+}
+.btn::before {
+  content: ''; position: absolute; inset: 0;
+  transform: translateX(-100%); transition: transform .35s;
+}
+.btn:hover::before { transform: translateX(0); }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+  color: var(--ink); border: none;
+}
+.btn-primary::before { background: rgba(255,255,255,0.12); }
+.btn-primary:hover { box-shadow: 0 0 25px rgba(201,168,76,0.5), inset 0 0 15px rgba(255,255,255,0.1); }
+
+.btn-outline {
+  background: transparent; color: var(--gold);
+  border: 1px solid rgba(201,168,76,0.4);
+}
+.btn-outline::before { background: rgba(201,168,76,0.08); }
+.btn-outline:hover { border-color: var(--gold); box-shadow: 0 0 15px rgba(201,168,76,0.2); }
+
+/* ─── CULTIVATION STATS ─── */
+.cultivation-panel {
+  background: rgba(201,168,76,0.04);
+  border: 1px solid rgba(201,168,76,0.15);
+  padding: 2rem;
+  position: relative;
+  opacity: 0; animation: ascend .7s .55s forwards;
+}
+.cultivation-panel::before {
+  content: '修為境界';
+  position: absolute; top: -0.6rem; left: 50%; transform: translateX(-50%);
+  font-family: var(--brush); font-size: 0.75rem;
+  color: var(--gold); padding: 0 0.75rem;
+  background: var(--deep); letter-spacing: 0.1em;
+}
+.cultivation-panel::after {
+  content: '';
+  position: absolute; inset: 3px;
+  border: 1px solid rgba(201,168,76,0.08);
+  pointer-events: none;
+}
+
+.stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+.stat-crystal {
+  text-align: center; padding: 1.25rem 0.75rem;
+  border: 1px solid rgba(201,168,76,0.12);
+  background: rgba(10,12,20,0.6);
+  position: relative; overflow: hidden;
+  transition: all .3s;
+}
+.stat-crystal::before {
+  content: '';
+  position: absolute; top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%);
+  opacity: 0; transition: opacity .3s;
+}
+.stat-crystal:hover::before { opacity: 1; }
+.stat-crystal:hover { border-color: rgba(201,168,76,0.3); transform: translateY(-2px); }
+
+.stat-num {
+  font-family: var(--brush);
+  font-size: 2.2rem; line-height: 1;
+  background: linear-gradient(to bottom, var(--gold-light), var(--gold));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; margin-bottom: 0.4rem;
+}
+.stat-desc {
+  font-size: 0.63rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: rgba(245,240,232,0.35);
+}
+
+.availability-seal {
+  display: flex; align-items: center; gap: 0.75rem;
+  font-family: var(--serif); font-size: 0.65rem;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--jade); padding: 0.75rem 1rem;
+  border: 1px solid rgba(74,158,122,0.25);
+  background: rgba(74,158,122,0.05);
+  margin-top: 1.5rem;
+}
+.jade-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--jade); flex-shrink: 0;
+  box-shadow: 0 0 8px var(--jade-light);
+  animation: jade-pulse 2.5s infinite;
+}
+@keyframes jade-pulse {
+  0%,100% { opacity:1; box-shadow: 0 0 8px var(--jade-light); }
+  50% { opacity:0.5; box-shadow: 0 0 3px var(--jade); }
+}
+
+/* ─── DIVIDER ORNAMENT ─── */
+.sect-divider {
+  display: flex; align-items: center; gap: 1.5rem;
+  padding: 3rem 3rem 0;
+  position: relative; z-index: 10;
+}
+.divider-line { flex: 1; height: 1px; background: linear-gradient(to right, transparent, rgba(201,168,76,0.25), transparent); }
+.divider-glyph {
+  font-family: var(--brush); font-size: 1.1rem;
+  color: rgba(201,168,76,0.45); letter-spacing: 0.3em; white-space: nowrap;
+}
+
+/* ─── SECTIONS ─── */
+section {
+  position: relative; z-index: 10;
+  padding: 4rem 3rem;
+  border-top: 1px solid rgba(201,168,76,0.1);
+}
+
+.section-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem; }
+.section-title {
+  font-family: var(--brush);
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  line-height: 1.1;
+  background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 8px rgba(201,168,76,0.2));
+}
+.section-num {
+  font-family: var(--brush); font-size: 1.4rem;
+  color: rgba(201,168,76,0.2); letter-spacing: 0.1em;
+}
+.section-subtitle {
+  font-family: var(--serif); font-size: 0.62rem;
+  letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--gold-dim); margin-bottom: 0.5rem;
+  display: block;
+}
+
+/* ─── SKILLS GRID ─── */
+.skills-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  border: 1px solid rgba(201,168,76,0.15);
+  position: relative;
+}
+.skills-grid::before {
+  content: '';
+  position: absolute; inset: -1px;
+  background: linear-gradient(135deg, rgba(201,168,76,0.08), transparent, rgba(74,158,122,0.05));
+  pointer-events: none;
+}
+
+.skill-group {
+  padding: 2rem 1.5rem;
+  border-right: 1px solid rgba(201,168,76,0.1);
+  border-bottom: 1px solid rgba(201,168,76,0.1);
+  transition: background .3s;
+  position: relative;
+}
+.skill-group:hover { background: rgba(201,168,76,0.03); }
 .skill-group:nth-child(3n) { border-right: none; }
 .skill-group:nth-last-child(-n+3) { border-bottom: none; }
-.skill-group-name { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gray-400); margin-bottom: 1rem; }
+
+.skill-group-icon {
+  font-size: 1.2rem; margin-bottom: 0.4rem; display: block;
+}
+.skill-group-name {
+  font-family: var(--brush); font-size: 0.95rem;
+  color: var(--gold); margin-bottom: 1rem;
+  letter-spacing: 0.1em;
+}
 .skill-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-.tag { font-size: 0.78rem; font-weight: 500; padding: 0.28rem 0.6rem; background: var(--gray-100); color: var(--gray-600); border-radius: 2px; }
-.tag.hi { background: var(--black); color: var(--white); }
+.tag {
+  font-size: 0.73rem; padding: 0.25rem 0.65rem;
+  border: 1px solid rgba(201,168,76,0.2);
+  color: rgba(245,240,232,0.6);
+  transition: all .25s; cursor: default;
+  background: rgba(201,168,76,0.03);
+}
+.tag:hover { border-color: rgba(201,168,76,0.5); color: var(--gold-light); background: rgba(201,168,76,0.08); }
+.tag.hi {
+  background: rgba(201,168,76,0.12);
+  border-color: rgba(201,168,76,0.4);
+  color: var(--gold-light);
+  text-shadow: 0 0 8px rgba(201,168,76,0.3);
+}
+.tag.jade-hi {
+  background: rgba(74,158,122,0.1);
+  border-color: rgba(74,158,122,0.35);
+  color: var(--jade-light);
+}
 
-/* PROJECTS */
-.projects-list { display: flex; flex-direction: column; }
-.project-card { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--gray-200); padding: 2.5rem 0; gap: 3rem; transition: all .2s; }
-.project-card:hover { background: var(--gray-100); padding-left: 1rem; padding-right: 1rem; margin: 0 -1rem; }
-.project-meta { display: flex; flex-direction: column; gap: 0.75rem; }
-.project-index { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.12em; color: var(--gray-400); }
-.project-title { font-family: var(--serif); font-size: 1.5rem; line-height: 1.15; letter-spacing: -0.01em; }
-.project-type { font-size: 0.8rem; color: var(--gray-400); }
-.impact-badge { display: inline-flex; align-items: center; gap: 0.4rem; font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.06em; padding: 0.3rem 0.7rem; background: var(--black); color: var(--white); border-radius: 2px; align-self: flex-start; margin-top: 0.25rem; }
-.project-links { display: flex; gap: 1.25rem; margin-top: auto; padding-top: 0.5rem; }
-.project-link { font-family: var(--mono); font-size: 0.72rem; color: var(--gray-600); text-decoration: none; border-bottom: 1px solid var(--gray-200); padding-bottom: 1px; transition: all .2s; letter-spacing: 0.04em; }
-.project-link:hover { color: var(--black); border-color: var(--black); }
-.project-detail { display: flex; flex-direction: column; gap: 1rem; }
+/* ─── PROJECTS ─── */
+.projects-list { display: flex; flex-direction: column; gap: 0; }
+.project-card {
+  display: grid; grid-template-columns: 1fr 1fr;
+  border-top: 1px solid rgba(201,168,76,0.12);
+  padding: 3rem 0; gap: 4rem;
+  transition: all .35s; position: relative;
+}
+.project-card::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: linear-gradient(to bottom, transparent, var(--gold), transparent);
+  opacity: 0; transform: scaleY(0);
+  transition: opacity .35s, transform .35s;
+}
+.project-card:hover::before { opacity: 1; transform: scaleY(1); }
+.project-card:hover { padding-left: 2rem; background: rgba(201,168,76,0.025); }
+
+.project-index {
+  font-family: var(--serif); font-size: 0.62rem;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--gold-dim);
+}
+.project-title {
+  font-family: var(--brush);
+  font-size: 1.5rem; line-height: 1.2;
+  color: var(--gold-light); margin: 0.6rem 0 0.4rem;
+}
+.project-lore {
+  font-size: 0.8rem; color: rgba(245,240,232,0.4);
+  font-style: italic; margin-bottom: 0.75rem;
+}
+.impact-badge {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  font-family: var(--serif); font-size: 0.63rem;
+  letter-spacing: 0.1em; padding: 0.3rem 0.8rem;
+  background: rgba(201,168,76,0.12);
+  border: 1px solid rgba(201,168,76,0.3);
+  color: var(--gold); margin: 0.25rem 0 0.75rem;
+  align-self: flex-start;
+}
+.impact-badge::before { content: '◆'; font-size: 0.5rem; }
+.project-links { display: flex; gap: 1.5rem; margin-top: 0.75rem; }
+.project-link {
+  font-family: var(--serif); font-size: 0.68rem;
+  letter-spacing: 0.12em; color: rgba(245,240,232,0.4);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(201,168,76,0.2);
+  padding-bottom: 2px; transition: all .25s;
+}
+.project-link:hover { color: var(--gold); border-color: var(--gold); text-shadow: 0 0 8px rgba(201,168,76,0.4); }
+
+.project-detail { display: flex; flex-direction: column; gap: 1.25rem; padding-top: 1.6rem; }
 .project-stack { display: flex; flex-wrap: wrap; gap: 0.35rem; }
-.stack-tag { font-family: var(--mono); font-size: 0.66rem; padding: 0.2rem 0.5rem; letter-spacing: 0.06em; border: 1px solid var(--gray-200); color: var(--gray-600); border-radius: 2px; }
-.project-bullets { list-style: none; display: flex; flex-direction: column; gap: 0.55rem; }
-.project-bullets li { font-size: 0.88rem; color: var(--gray-600); line-height: 1.65; padding-left: 1.1rem; position: relative; }
-.project-bullets li::before { content: '—'; position: absolute; left: 0; color: var(--gray-300); font-size: 0.8rem; }
-.project-bullets li strong { color: var(--black); font-weight: 500; }
+.stack-tag {
+  font-family: var(--serif); font-size: 0.62rem;
+  padding: 0.18rem 0.55rem; letter-spacing: 0.08em;
+  border: 1px solid rgba(74,158,122,0.2);
+  color: rgba(109,196,154,0.7);
+  background: rgba(74,158,122,0.05);
+  transition: all .2s;
+}
+.stack-tag:hover { border-color: var(--jade); color: var(--jade-light); }
+.project-bullets { list-style: none; display: flex; flex-direction: column; gap: 0.65rem; }
+.project-bullets li {
+  font-size: 0.85rem; color: rgba(245,240,232,0.55);
+  line-height: 1.7; padding-left: 1.25rem; position: relative;
+}
+.project-bullets li::before {
+  content: '⊱'; position: absolute; left: 0;
+  color: rgba(201,168,76,0.35); font-size: 0.7rem;
+  top: 0.2rem;
+}
+.project-bullets li strong { color: var(--gold-light); font-weight: 500; }
 
-/* EXPERIENCE / EDUCATION */
-.exp-item, .edu-item { padding: 2rem 0; border-top: 1px solid var(--gray-200); display: grid; grid-template-columns: 180px 1fr; gap: 2rem; }
-.exp-period { font-family: var(--mono); font-size: 0.72rem; color: var(--gray-400); letter-spacing: 0.06em; padding-top: 0.15rem; }
-.exp-title { font-size: 1rem; font-weight: 500; margin-bottom: 0.2rem; }
-.exp-org { font-size: 0.85rem; color: var(--gray-400); margin-bottom: 0.75rem; }
-.exp-list { list-style: none; display: flex; flex-direction: column; gap: 0.35rem; }
-.exp-list li { font-size: 0.88rem; color: var(--gray-600); padding-left: 1rem; position: relative; }
-.exp-list li::before { content: '·'; position: absolute; left: 0; color: var(--gray-400); }
+/* ─── EXPERIENCE ─── */
+.exp-item, .edu-item {
+  padding: 2.5rem 0;
+  border-top: 1px solid rgba(201,168,76,0.1);
+  display: grid; grid-template-columns: 160px 1fr; gap: 2.5rem;
+}
+.exp-period {
+  font-family: var(--serif); font-size: 0.68rem;
+  color: var(--gold-dim); letter-spacing: 0.1em;
+  padding-top: 0.2rem; line-height: 2;
+}
+.exp-title { font-family: var(--brush); font-size: 1.15rem; color: var(--gold-light); margin-bottom: 0.25rem; }
+.exp-org { font-size: 0.8rem; color: rgba(245,240,232,0.4); margin-bottom: 0.75rem; letter-spacing: 0.05em; }
+.exp-list { list-style: none; display: flex; flex-direction: column; gap: 0.4rem; }
+.exp-list li {
+  font-size: 0.85rem; color: rgba(245,240,232,0.5);
+  padding-left: 1.25rem; position: relative;
+}
+.exp-list li::before {
+  content: '·'; position: absolute; left: 0;
+  color: var(--gold-dim); font-size: 1.2rem; line-height: 1.2;
+}
 
-/* CONTACT */
-.contact-section { background: var(--black); color: var(--white); padding: 5rem 2.5rem; border-top: none; }
-.contact-section .section-title { color: var(--white); }
-.contact-section .section-num { color: rgba(255,255,255,0.25); }
-.contact-tagline { font-family: var(--serif); font-style: italic; font-size: clamp(1.3rem, 2.2vw, 2rem); color: rgba(255,255,255,0.55); margin-bottom: 2.5rem; line-height: 1.35; }
-.contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
-.contact-label { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 0.35rem; }
-.contact-value { font-size: 0.92rem; color: rgba(255,255,255,0.8); }
-.contact-value a { color: inherit; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.2); transition: border-color .2s; }
-.contact-value a:hover { border-color: rgba(255,255,255,0.7); }
+/* ─── CONTACT ─── */
+.contact-section {
+  background: radial-gradient(ellipse at 30% 50%, rgba(201,168,76,0.06) 0%, transparent 60%),
+              radial-gradient(ellipse at 70% 50%, rgba(74,158,122,0.04) 0%, transparent 55%),
+              rgba(10,12,20,0.95);
+  padding: 6rem 3rem; border-top: 1px solid rgba(201,168,76,0.15);
+}
+.contact-title-ornament {
+  display: flex; align-items: center; gap: 1.5rem; margin-bottom: 3rem;
+}
+.contact-deco { font-family: var(--brush); font-size: 2rem; color: rgba(201,168,76,0.2); }
+.contact-tagline {
+  font-family: var(--brush);
+  font-size: clamp(1.2rem, 2vw, 1.8rem);
+  color: rgba(245,240,232,0.35);
+  margin-bottom: 3rem; line-height: 1.5; letter-spacing: 0.05em;
+}
+.contact-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+.contact-card {
+  padding: 1.5rem;
+  border: 1px solid rgba(201,168,76,0.12);
+  background: rgba(201,168,76,0.03);
+  transition: all .3s;
+}
+.contact-card:hover {
+  border-color: rgba(201,168,76,0.3);
+  background: rgba(201,168,76,0.06);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+.contact-label {
+  font-family: var(--serif); font-size: 0.6rem;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--gold-dim); margin-bottom: 0.5rem;
+}
+.contact-value { font-size: 0.88rem; color: rgba(245,240,232,0.7); }
+.contact-value a {
+  color: inherit; text-decoration: none;
+  border-bottom: 1px solid rgba(201,168,76,0.2);
+  transition: all .25s;
+}
+.contact-value a:hover { color: var(--gold); border-color: var(--gold); }
 
-/* FOOTER */
-footer { background: var(--black); color: rgba(255,255,255,0.2); padding: 1.25rem 2.5rem; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.07); }
+/* ─── FOOTER ─── */
+footer {
+  background: rgba(5,7,12,0.98);
+  color: rgba(201,168,76,0.2);
+  padding: 1.5rem 3rem;
+  font-family: var(--serif); font-size: 0.6rem;
+  letter-spacing: 0.25em; text-transform: uppercase;
+  display: flex; justify-content: space-between; align-items: center;
+  border-top: 1px solid rgba(201,168,76,0.08);
+}
+.footer-glyph { font-family: var(--brush); font-size: 0.9rem; color: rgba(201,168,76,0.15); }
 
-/* ANIMATIONS */
-@keyframes up { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
-.reveal { opacity: 0; transform: translateY(18px); transition: opacity .55s, transform .55s; }
-.reveal.visible { opacity: 1; transform: none; }
+/* ─── ANIMATIONS ─── */
+@keyframes ascend { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:none; } }
+.reveal { opacity:0; transform:translateY(22px); transition: opacity .65s, transform .65s; }
+.reveal.visible { opacity:1; transform:none; }
 
-/* RESPONSIVE */
-@media (max-width: 768px) {
-  nav { padding: 1rem 1.25rem; }
-  .nav-links { gap: 1rem; }
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--deep); }
+::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(201,168,76,0.5); }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 900px) {
+  nav { padding: 1rem 1.5rem; }
+  .nav-links { gap: 1.5rem; }
   .hero { grid-template-columns: 1fr; }
-  .hero-left { padding: 3rem 1.25rem; }
-  .hero-right { padding: 2rem 1.25rem; border-top: 1px solid var(--gray-200); }
-  .stats-strip { flex-direction: row; flex-wrap: wrap; gap: 1.5rem; }
-  .stat-number { font-size: 2.2rem; }
-  section { padding: 3rem 1.25rem; }
+  .hero-left { padding: 3rem 1.5rem; }
+  .hero-right { padding: 2rem 1.5rem; border-top: 1px solid rgba(201,168,76,0.15); }
+  section { padding: 3rem 1.5rem; }
   .skills-grid { grid-template-columns: 1fr 1fr; }
-  .skill-group:nth-child(3n) { border-right: 1px solid var(--gray-200); }
-  .skill-group:nth-child(2n) { border-right: none; }
-  .project-card { grid-template-columns: 1fr; gap: 1.5rem; }
-  .exp-item, .edu-item { grid-template-columns: 1fr; gap: 0.4rem; }
+  .skills-grid .skill-group:nth-child(3n) { border-right: 1px solid rgba(201,168,76,0.1); }
+  .skills-grid .skill-group:nth-child(2n) { border-right: none; }
+  .project-card { grid-template-columns: 1fr; gap: 1.5rem; padding: 2rem 0; }
+  .project-card:hover { padding-left: 1rem; }
+  .exp-item, .edu-item { grid-template-columns: 1fr; gap: 0.5rem; }
+  .contact-grid { grid-template-columns: 1fr 1fr; }
+  .stat-row { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .skills-grid { grid-template-columns: 1fr; }
   .contact-grid { grid-template-columns: 1fr; }
+  .hero-name { font-size: 3rem; }
 }
 </style>
 </head>
 <body>
 
+<canvas id="cosmos"></canvas>
+<div class="mist-layer"></div>
+
+<!-- NAV -->
 <nav>
-  <span class="nav-id">NTT · Portfolio</span>
+  <span class="nav-seal">⚔ NTT · Tiên Đạo Lập Trình ⚔</span>
   <ul class="nav-links">
-    <li><a href="#skills">Skills</a></li>
-    <li><a href="#projects">Projects</a></li>
-    <li><a href="#experience">Experience</a></li>
-    <li><a href="#contact">Contact</a></li>
+    <li><a href="#skills">Thần Thông</a></li>
+    <li><a href="#projects">Thành Tựu</a></li>
+    <li><a href="#experience">Tu Luyện</a></li>
+    <li><a href="#contact">Liên Hệ</a></li>
   </ul>
 </nav>
 
 <!-- HERO -->
-<section class="hero" style="border-top:none;padding:0;">
+<section class="hero" style="border-top:none;padding:0;padding-top:60px;">
   <div class="hero-left">
-    <p class="eyebrow">Java Backend · Fullstack · IT Support</p>
-    <h1 class="hero-name">Nguyen<br>Thanh <em>Truong</em></h1>
-    <p class="hero-role">Fresher Developer · Class of 2025</p>
+    <div class="realm-badge">Java Backend · Fullstack · IT Support</div>
+    <h1 class="hero-name">Nguyễn Thanh Trường</h1>
+    <p class="hero-title-zh">阮清長 · 初入仙道 · 2025年</p>
+    <p class="hero-role">Fresher Developer · Tốt Nghiệp 2025 · TPHCM</p>
     <p class="hero-bio">
-      IT Engineer graduating from STU. Built <strong>production full-stack systems from scratch — solo</strong>, including a live e-commerce platform with 82 API endpoints and real payment integration. Open to Backend, Fullstack, and IT Support roles in Ho Chi Minh City.
+      Kỹ sư CNTT tốt nghiệp STU. Một mình kiến tạo <strong>hệ thống fullstack hoàn chỉnh từ đầu</strong> — bao gồm nền tảng thương mại điện tử thời trang với 82 API endpoint và tích hợp thanh toán thực. Đang tìm kiếm cơ hội <strong>Backend, Fullstack, hoặc IT Support</strong> tại TP.HCM.
     </p>
     <div class="cta-row">
-      <a href="#projects" class="btn btn-primary">View Projects</a>
+      <a href="#projects" class="btn btn-primary">⚔ Xem Thành Tựu</a>
       <a href="https://github.com/truong-backend" target="_blank" class="btn btn-outline">GitHub ↗</a>
-      <a href="#contact" class="btn btn-outline">Contact</a>
+      <a href="https://truongnguyen-dev.vercel.app" target="_blank" class="btn btn-outline">Portfolio ↗</a>
     </div>
   </div>
   <div class="hero-right">
-    <div class="stats-strip">
-      <div class="stat-item">
-        <div class="stat-number">82</div>
-        <div class="stat-label">REST API Endpoints Built</div>
+    <div class="cultivation-panel">
+      <div class="stat-row">
+        <div class="stat-crystal">
+          <div class="stat-num">82</div>
+          <div class="stat-desc">REST API Endpoints</div>
+        </div>
+        <div class="stat-crystal">
+          <div class="stat-num">3</div>
+          <div class="stat-desc">Dự Án Hoàn Thành</div>
+        </div>
+        <div class="stat-crystal">
+          <div class="stat-num">7.31</div>
+          <div class="stat-desc">GPA / 10 · Khá Giỏi</div>
+        </div>
+        <div class="stat-crystal">
+          <div class="stat-num">750</div>
+          <div class="stat-desc">TOEIC · STU Exit</div>
+        </div>
       </div>
-      <div class="stat-item">
-        <div class="stat-number">2</div>
-        <div class="stat-label">Production Projects Deployed</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-number">7.31</div>
-        <div class="stat-label">GPA / 10 · Good Standing</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-number">750</div>
-        <div class="stat-label">TOEIC Score · STU Exit Exam</div>
+      <div class="stat-row" style="margin-bottom:0;">
+        <div class="stat-crystal" style="grid-column:1/-1;">
+          <div class="stat-num" style="font-size:1.5rem;">DOB 08/02/2003</div>
+          <div class="stat-desc">Sinh Năm Quý Mùi · TPHCM</div>
+        </div>
       </div>
     </div>
-    <div class="availability">
-      <span class="dot"></span> Available for hire · HCM City
+    <div class="availability-seal">
+      <span class="jade-dot"></span>
+      Đang Sẵn Sàng Nhập Môn · Cầu Tuyển
     </div>
   </div>
 </section>
@@ -206,12 +619,16 @@ footer { background: var(--black); color: rgba(255,255,255,0.2); padding: 1.25re
 <!-- SKILLS -->
 <section id="skills">
   <div class="section-header reveal">
-    <h2 class="section-title">Technical<br><em style="font-style:italic;color:var(--gray-400)">Skills</em></h2>
-    <span class="section-num">01</span>
+    <div>
+      <span class="section-subtitle">神通技藝</span>
+      <h2 class="section-title">Thần Thông<br>Kỹ Năng</h2>
+    </div>
+    <span class="section-num">壹</span>
   </div>
   <div class="skills-grid reveal">
     <div class="skill-group">
-      <div class="skill-group-name">Backend</div>
+      <span class="skill-group-icon">⚙</span>
+      <div class="skill-group-name">後端 · Backend</div>
       <div class="skill-tags">
         <span class="tag hi">Java Spring Boot</span>
         <span class="tag hi">JWT</span>
@@ -222,7 +639,8 @@ footer { background: var(--black); color: rgba(255,255,255,0.2); padding: 1.25re
       </div>
     </div>
     <div class="skill-group">
-      <div class="skill-group-name">Frontend</div>
+      <span class="skill-group-icon">✦</span>
+      <div class="skill-group-name">前端 · Frontend</div>
       <div class="skill-tags">
         <span class="tag hi">React</span>
         <span class="tag hi">TypeScript</span>
@@ -232,44 +650,54 @@ footer { background: var(--black); color: rgba(255,255,255,0.2); padding: 1.25re
       </div>
     </div>
     <div class="skill-group">
-      <div class="skill-group-name">Database</div>
+      <span class="skill-group-icon">◈</span>
+      <div class="skill-group-name">數據庫 · Database</div>
       <div class="skill-tags">
         <span class="tag hi">MySQL</span>
         <span class="tag">SQL Server</span>
         <span class="tag">ERD Design</span>
         <span class="tag">Triggers</span>
         <span class="tag">Stored Procedures</span>
+        <span class="tag">JOIN / Subquery</span>
       </div>
     </div>
     <div class="skill-group">
-      <div class="skill-group-name">DevOps & Tools</div>
+      <span class="skill-group-icon">⚡</span>
+      <div class="skill-group-name">工具 · DevOps & Tools</div>
       <div class="skill-tags">
         <span class="tag">Git / Bitbucket</span>
         <span class="tag">Jira</span>
         <span class="tag">Trello / Scrum</span>
         <span class="tag">Vercel</span>
         <span class="tag">Railway</span>
+        <span class="tag">Docker</span>
       </div>
     </div>
     <div class="skill-group">
-      <div class="skill-group-name">IT Support</div>
+      <span class="skill-group-icon">🛡</span>
+      <div class="skill-group-name">IT Support · 技術支援</div>
       <div class="skill-tags">
-        <span class="tag">Windows 7–11</span>
+        <span class="tag">Windows XP–11</span>
         <span class="tag">Linux / Ubuntu</span>
+        <span class="tag">Dual-boot</span>
         <span class="tag">TCP/IP · DHCP · DNS</span>
         <span class="tag">BIOS Config</span>
         <span class="tag">DLCBoot / WinPE</span>
-        <span class="tag">Hardware Repair</span>
+        <span class="tag">PC Assembly & Repair</span>
+        <span class="tag">Network Crimping T568</span>
       </div>
     </div>
     <div class="skill-group">
-      <div class="skill-group-name">Languages</div>
+      <span class="skill-group-icon">⬡</span>
+      <div class="skill-group-name">語言 · Ngôn Ngữ</div>
       <div class="skill-tags">
         <span class="tag hi">Java</span>
         <span class="tag">TypeScript</span>
         <span class="tag">JavaScript</span>
         <span class="tag">SQL</span>
         <span class="tag">C++</span>
+        <span class="tag jade-hi">Tiếng Việt · Bản Ngữ</span>
+        <span class="tag">English · TOEIC 750</span>
       </div>
     </div>
   </div>
@@ -278,17 +706,20 @@ footer { background: var(--black); color: rgba(255,255,255,0.2); padding: 1.25re
 <!-- PROJECTS -->
 <section id="projects">
   <div class="section-header reveal">
-    <h2 class="section-title">Featured<br><em style="font-style:italic;color:var(--gray-400)">Projects</em></h2>
-    <span class="section-num">02</span>
+    <div>
+      <span class="section-subtitle">千秋功業</span>
+      <h2 class="section-title">Thành Tựu<br>Kiệt Tác</h2>
+    </div>
+    <span class="section-num">貳</span>
   </div>
   <div class="projects-list">
 
     <div class="project-card reveal">
       <div class="project-meta">
-        <span class="project-index">01 · Graduation Thesis · 2025</span>
+        <span class="project-index">01 · Luận Văn Tốt Nghiệp · 2025</span>
         <h3 class="project-title">Fashion E-Commerce Management Website</h3>
-        <p class="project-type">Solo Fullstack — Backend + Frontend + Deployment</p>
-        <span class="impact-badge">82 endpoints · Live on Vercel · &lt;1 month</span>
+        <p class="project-lore">Nhất nhân độc kiến — một mình kiến tạo từ ý tưởng đến vận hành</p>
+        <span class="impact-badge">82 endpoints · Live · &lt;1 tháng</span>
         <div class="project-links">
           <a href="https://github.com/truong-backend/WebsiteQuanAo" target="_blank" class="project-link">GitHub ↗</a>
           <a href="https://website-quan-ao.vercel.app" target="_blank" class="project-link">Live Demo ↗</a>
@@ -296,42 +727,82 @@ footer { background: var(--black); color: rgba(255,255,255,0.2); padding: 1.25re
       </div>
       <div class="project-detail">
         <div class="project-stack">
-          <span class="stack-tag">Java Spring Boot</span><span class="stack-tag">React TypeScript</span>
-          <span class="stack-tag">MySQL</span><span class="stack-tag">JWT</span>
-          <span class="stack-tag">VNPay</span><span class="stack-tag">Vercel</span><span class="stack-tag">Railway</span>
+          <span class="stack-tag">Java Spring Boot</span>
+          <span class="stack-tag">React TypeScript</span>
+          <span class="stack-tag">MySQL</span>
+          <span class="stack-tag">JWT</span>
+          <span class="stack-tag">VNPay</span>
+          <span class="stack-tag">Vercel</span>
+          <span class="stack-tag">Railway</span>
         </div>
         <ul class="project-bullets">
-          <li><strong>82 REST API endpoints</strong> built solo in under 1 month — Controller → Service → Repository → DTO → Mapper</li>
-          <li><strong>8 full modules:</strong> Products, Variants, Colors, Sizes, Orders, Categories, Invoices + Admin Dashboard</li>
-          <li><strong>VNPay payment gateway</strong> with callback verification and real transaction handling</li>
-          <li>JWT auth with ROLE_USER / ROLE_ADMIN; MySQL triggers, stored procedures, DB user permissions</li>
-          <li>Full frontend: user storefront (browse → cart → checkout → payment) + complete Admin CRUD</li>
+          <li><strong>82 REST API endpoints</strong> xây dựng solo trong chưa đầy 1 tháng — Controller → Service → Repository → DTO → Mapper</li>
+          <li><strong>8 module hoàn chỉnh:</strong> Products, Variants, Colors, Sizes, Orders, Categories, Invoices + Admin Dashboard</li>
+          <li><strong>Tích hợp VNPay</strong> với callback verification và xử lý giao dịch thực</li>
+          <li>JWT auth ROLE_USER / ROLE_ADMIN; MySQL triggers, stored procedures, phân quyền DB</li>
+          <li>Frontend đầy đủ: user storefront (duyệt → giỏ hàng → checkout → VNPay) + Admin CRUD</li>
+          <li>Thiết kế hệ thống: Use Case / Sequence / Activity diagrams, ERD → SQL</li>
         </ul>
       </div>
     </div>
 
     <div class="project-card reveal">
       <div class="project-meta">
-        <span class="project-index">02 · Team Project (8 people) · 2025</span>
+        <span class="project-index">02 · Nhóm 8 người · 2025</span>
         <h3 class="project-title">Zalo Mini App — Attendance Management System</h3>
-        <p class="project-type">Solo Backend + Frontend within team of 8</p>
-        <span class="impact-badge">Full-stack solo · Backend</span>
+        <p class="project-lore">Một mình gánh vác toàn bộ backend trong nhóm 8 người</p>
+        <span class="impact-badge">Solo Backend · Full-stack</span>
         <div class="project-links">
           <a href="https://github.com/truong-backend/DiemDanhZaloMiniApp" target="_blank" class="project-link">GitHub ↗</a>
-          <a href="https://youtube.com/watch?v=q6Yc-scePdM" target="_blank" class="project-link">Demo Video ↗</a>
+          <a href="https://youtu.be/q6Yc-scePdM?si=0WE_Vx0Q7QCw_com" target="_blank" class="project-link">Demo Video ↗</a>
         </div>
       </div>
       <div class="project-detail">
         <div class="project-stack">
-          <span class="stack-tag">Java Spring Boot</span><span class="stack-tag">Spring Security</span>
-          <span class="stack-tag">MySQL</span><span class="stack-tag">JWT</span>
-          <span class="stack-tag">ReactJS</span><span class="stack-tag">Zalo Mini App</span><span class="stack-tag">Bitbucket</span>
+          <span class="stack-tag">Java Spring Boot</span>
+          <span class="stack-tag">Spring Security</span>
+          <span class="stack-tag">MySQL</span>
+          <span class="stack-tag">JWT</span>
+          <span class="stack-tag">ReactJS</span>
+          <span class="stack-tag">Zalo Mini App</span>
+          <span class="stack-tag">Bitbucket</span>
+          <span class="stack-tag">Trello Scrum</span>
         </div>
         <ul class="project-bullets">
-          <li>Solely responsible for <strong>entire backend + frontend</strong> in an 8-person team</li>
-          <li><strong>Full database design from scratch:</strong> requirements, ERD, business constraints, SQL schema</li>
-          <li>Complete REST API: JWT auth (login/logout), attendance tracking, teacher management with <strong>role-based Spring Security</strong></li>
-          <li>Technical docs for Zalo Mini App integration; source code managed via <strong>Bitbucket + Trello Scrum</strong></li>
+          <li>Toàn quyền phụ trách <strong>toàn bộ backend + một phần frontend</strong> trong nhóm 8 người</li>
+          <li><strong>Thiết kế DB từ đầu:</strong> requirements, ERD, business constraints, SQL schema</li>
+          <li>REST API đầy đủ: JWT auth (login/logout), điểm danh, quản lý giáo viên với <strong>Spring Security RBAC</strong></li>
+          <li>Tài liệu kỹ thuật tích hợp Zalo Mini App; quản lý source code qua <strong>Bitbucket + Trello Scrum</strong></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="project-card reveal">
+      <div class="project-meta">
+        <span class="project-index">03 · Business Analyst · 2025</span>
+        <h3 class="project-title">PocPoc — Social Network Website</h3>
+        <p class="project-lore">Vận dụng trí tuệ phân tích — kiến tạo nền móng hệ thống</p>
+        <span class="impact-badge">Business Analyst · Full Docs</span>
+        <div class="project-links">
+          <a href="https://social-network-ui-six.vercel.app" target="_blank" class="project-link">Demo ↗</a>
+        </div>
+      </div>
+      <div class="project-detail">
+        <div class="project-stack">
+          <span class="stack-tag">Spring Boot</span>
+          <span class="stack-tag">Spring Security</span>
+          <span class="stack-tag">Neo4j</span>
+          <span class="stack-tag">Redis</span>
+          <span class="stack-tag">Next.js</span>
+          <span class="stack-tag">TailwindCSS</span>
+          <span class="stack-tag">WebSocket</span>
+          <span class="stack-tag">Docker</span>
+        </div>
+        <ul class="project-bullets">
+          <li>Độc lập viết <strong>toàn bộ tài liệu phân tích yêu cầu</strong> cho luồng Login / Register từ đầu đến cuối</li>
+          <li>Xuất bản tài liệu hệ thống đầy đủ: phân tích quy trình nghiệp vụ, Use Case diagram, mô hình dữ liệu khái niệm / logic / vật lý</li>
+          <li>Sequence diagrams và activity diagrams cho tất cả các kịch bản xác thực</li>
+          <li>Vai trò BA thuần túy — không tham gia coding, tập trung hoàn toàn vào phân tích và tài liệu</li>
         </ul>
       </div>
     </div>
@@ -342,19 +813,23 @@ footer { background: var(--black); color: rgba(255,255,255,0.2); padding: 1.25re
 <!-- EXPERIENCE & EDUCATION -->
 <section id="experience">
   <div class="section-header reveal">
-    <h2 class="section-title">Experience &<br><em style="font-style:italic;color:var(--gray-400)">Education</em></h2>
-    <span class="section-num">03</span>
+    <div>
+      <span class="section-subtitle">修煉歷程</span>
+      <h2 class="section-title">Kinh Nghiệm<br>Tu Luyện</h2>
+    </div>
+    <span class="section-num">叁</span>
   </div>
 
   <div class="exp-item reveal">
-    <div class="exp-period">2021 — Present</div>
+    <div class="exp-period">2021 — Hiện Tại</div>
     <div>
-      <div class="exp-title">Informal IT Support</div>
-      <div class="exp-org">Personal / Community</div>
+      <div class="exp-title">IT Support · Hỗ Trợ Cộng Đồng</div>
+      <div class="exp-org">Cá Nhân / Gia Đình / Bạn Bè</div>
       <ul class="exp-list">
-        <li>Windows installation, driver setup, software configuration for family and friends</li>
-        <li>Resolved system crashes, virus infections, boot failures, slow performance</li>
-        <li>PC hardware assembly and repair; BIOS configuration; dual-boot Linux + Windows setup</li>
+        <li>Cài đặt Windows, driver, phần mềm theo yêu cầu cho gia đình và bạn bè</li>
+        <li>Xử lý hệ thống crash, nhiễm virus, boot failure, máy chậm</li>
+        <li>Lắp ráp và sửa chữa phần cứng PC; cấu hình BIOS; cài dual-boot Linux + Windows</li>
+        <li>Cấu hình IP, DNS, chia sẻ file LAN; bấm cáp mạng chuẩn T568A/B</li>
       </ul>
     </div>
   </div>
@@ -362,11 +837,12 @@ footer { background: var(--black); color: rgba(255,255,255,0.2); padding: 1.25re
   <div class="edu-item reveal">
     <div class="exp-period">2021 — 2025</div>
     <div>
-      <div class="exp-title">Bachelor of Information Technology</div>
-      <div class="exp-org">Saigon Technology University (STU) · Major: Software Engineering</div>
+      <div class="exp-title">Cử Nhân Công Nghệ Thông Tin</div>
+      <div class="exp-org">Trường Đại Học Công Nghệ Sài Gòn (STU) · Chuyên ngành: Kỹ thuật Phần Mềm</div>
       <ul class="exp-list">
-        <li>GPA: 7.31 / 10 — Good standing</li>
-        <li>English exit exam: 750 / 990 (TOEIC scale)</li>
+        <li>GPA: 7.31 / 10 — Loại Khá</li>
+        <li>English exit exam: 750 / 990 (Thang TOEIC) — Đọc tài liệu kỹ thuật, viết email công việc</li>
+        <li>Luận văn tốt nghiệp: Hệ thống quản lý thương mại điện tử thời trang (Java Spring Boot + React)</li>
       </ul>
     </div>
   </div>
@@ -374,51 +850,127 @@ footer { background: var(--black); color: rgba(255,255,255,0.2); padding: 1.25re
 
 <!-- CONTACT -->
 <section id="contact" class="contact-section">
-  <div class="section-header">
-    <h2 class="section-title">Get in<br>Touch</h2>
-    <span class="section-num">04</span>
-  </div>
-  <p class="contact-tagline">Open to Backend, Fullstack,<br>and IT Support opportunities.</p>
-  <div class="contact-grid">
+  <div class="contact-title-ornament">
+    <span class="contact-deco">✦</span>
     <div>
-      <div class="contact-label">Email</div>
+      <span class="section-subtitle">天涯若比鄰</span>
+      <h2 class="section-title">Liên Hệ</h2>
+    </div>
+    <span class="contact-deco">✦</span>
+  </div>
+  <p class="contact-tagline">Mở lòng đón nhận cơ duyên —<br>Backend, Fullstack & IT Support tại TP.HCM</p>
+  <div class="contact-grid">
+    <div class="contact-card">
+      <div class="contact-label">⚡ Email</div>
       <div class="contact-value"><a href="mailto:honguyententhanhtruong@gmail.com">honguyententhanhtruong@gmail.com</a></div>
     </div>
-    <div>
-      <div class="contact-label">Phone</div>
+    <div class="contact-card">
+      <div class="contact-label">📞 Điện Thoại</div>
       <div class="contact-value">0981 907 754</div>
     </div>
-    <div>
-      <div class="contact-label">GitHub</div>
+    <div class="contact-card">
+      <div class="contact-label">⚔ GitHub</div>
       <div class="contact-value"><a href="https://github.com/truong-backend" target="_blank">github.com/truong-backend</a></div>
     </div>
-    <div>
-      <div class="contact-label">Location</div>
-      <div class="contact-value">Ho Chi Minh City, Vietnam</div>
+    <div class="contact-card">
+      <div class="contact-label">✦ Portfolio</div>
+      <div class="contact-value"><a href="https://truongnguyen-dev.vercel.app" target="_blank">truongnguyen-dev.vercel.app</a></div>
     </div>
-    <div>
-      <div class="contact-label">Live Project</div>
+    <div class="contact-card">
+      <div class="contact-label">◈ Live Project</div>
       <div class="contact-value"><a href="https://website-quan-ao.vercel.app" target="_blank">website-quan-ao.vercel.app</a></div>
     </div>
-    <div>
-      <div class="contact-label">Status</div>
-      <div class="contact-value" style="display:flex;align-items:center;gap:0.5rem;">
-        <span class="dot"></span> Available for hire
+    <div class="contact-card">
+      <div class="contact-label">⊱ Trạng Thái</div>
+      <div class="contact-value" style="display:flex;align-items:center;gap:0.6rem;">
+        <span class="jade-dot"></span> Sẵn sàng nhập môn
       </div>
     </div>
   </div>
 </section>
 
 <footer>
-  <span>NGUYEN THANH TRUONG · 2025</span>
-  <span>Ho Chi Minh City, Vietnam</span>
+  <span class="footer-glyph">剑</span>
+  <span>NGUYỄN THANH TRƯỜNG · 2025 · HO CHI MINH CITY</span>
+  <span class="footer-glyph">道</span>
 </footer>
 
 <script>
-const obs = new IntersectionObserver(entries => {
-  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-}, { threshold: 0.08 });
-document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+/* ─── STAR FIELD ─── */
+const canvas = document.getElementById('cosmos');
+const ctx = canvas.getContext('2d');
+let W, H, stars = [], particles = [];
+
+function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+resize(); window.addEventListener('resize', resize);
+
+// Generate stars
+for (let i = 0; i < 180; i++) {
+  stars.push({
+    x: Math.random(), y: Math.random(),
+    r: Math.random() * 1.2 + 0.2,
+    a: Math.random(),
+    speed: Math.random() * 0.0003 + 0.0001,
+    gold: Math.random() > 0.7
+  });
+}
+
+// Floating qi particles
+for (let i = 0; i < 30; i++) {
+  particles.push({
+    x: Math.random() * 100, y: Math.random() * 100,
+    vx: (Math.random() - 0.5) * 0.04,
+    vy: (Math.random() - 0.5) * 0.04,
+    r: Math.random() * 2 + 0.5,
+    a: Math.random() * 0.4 + 0.05,
+    jade: Math.random() > 0.5,
+    phase: Math.random() * Math.PI * 2
+  });
+}
+
+let t = 0;
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  t += 0.01;
+
+  // Stars
+  stars.forEach(s => {
+    s.a += s.speed;
+    const alpha = (Math.sin(s.a) * 0.5 + 0.5) * 0.6 + 0.1;
+    ctx.beginPath();
+    ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
+    ctx.fillStyle = s.gold ? `rgba(201,168,76,${alpha})` : `rgba(200,220,255,${alpha * 0.5})`;
+    ctx.fill();
+  });
+
+  // Qi particles
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0) p.x = 100; if (p.x > 100) p.x = 0;
+    if (p.y < 0) p.y = 100; if (p.y > 100) p.y = 0;
+    const pulse = Math.sin(t + p.phase) * 0.3 + 0.7;
+    const color = p.jade ? `rgba(74,158,122,${p.a * pulse})` : `rgba(201,168,76,${p.a * pulse * 0.7})`;
+    ctx.beginPath();
+    ctx.arc(p.x / 100 * W, p.y / 100 * H, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    // Glow
+    ctx.beginPath();
+    ctx.arc(p.x / 100 * W, p.y / 100 * H, p.r * 3, 0, Math.PI * 2);
+    ctx.fillStyle = p.jade ? `rgba(74,158,122,${p.a * pulse * 0.1})` : `rgba(201,168,76,${p.a * pulse * 0.08})`;
+    ctx.fill();
+  });
+
+  requestAnimationFrame(draw);
+}
+draw();
+
+/* ─── SCROLL REVEAL ─── */
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+}, { threshold: 0.12 });
+reveals.forEach(el => observer.observe(el));
 </script>
 </body>
 </html>
