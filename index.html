@@ -1297,6 +1297,715 @@ const rings = [
 ];
 
 /* ══════════════════════════════
+   7. KIẾM KHÁCH — Nhân vật múa kiếm
+   Vẽ bằng canvas primitives: đầu + thân + tứ chi
+   Animation state machine: idle → charge → slash → recover
+══════════════════════════════ */
+class SwordMaster {
+  constructor(xRatio, yRatio, facing, color, accentColor) {
+    this.xR      = xRatio;
+    this.yR      = yRatio;
+    this.facing  = facing;   // 1 = phải, -1 = trái
+    this.col     = color;
+    this.acc     = accentColor;
+    this.phase   = Math.random() * TAU;
+    // Animation state
+    this.state   = 'idle';   // idle | rise | charge | slash | recover | formation
+    this.stateT  = 0;
+    this.stateDur= 120 + Math.random() * 80;
+    // Limb angles (radians, relative)
+    this.armL    = 0;
+    this.armR    = 0;
+    this.legL    = 0;
+    this.legR    = 0;
+    this.bodyLean= 0;
+    this.swordAng= -PI * 0.3;
+    // Aura
+    this.auraOrbs= Array.from({length: 8}, (_, i) => ({
+      ang: (i/8)*TAU, r: 28 + Math.random()*12, phase: Math.random()*TAU, speed: 0.04+Math.random()*0.03
+    }));
+    // Ki burst timer
+    this.lastBurst = 0;
+    this.bursts    = [];
+    // Floating height oscillation
+    this.floatY  = 0;
+    // Scale
+    this.sc      = 0.72 + Math.random() * 0.28;
+  }
+
+  update() {
+    this.stateT++;
+    this.phase += 0.018;
+    this.floatY = Math.sin(this.phase * 0.7) * 5;
+
+    // State transitions
+    if (this.stateT >= this.stateDur) {
+      this.stateT = 0;
+      const next = {
+        idle:      ['rise','idle','formation'],
+        rise:      ['charge'],
+        charge:    ['slash'],
+        slash:     ['recover'],
+        recover:   ['idle','idle','formation'],
+        formation: ['idle','rise']
+      }[this.state];
+      this.state    = next[Math.floor(Math.random()*next.length)];
+      this.stateDur = {
+        idle: 90+Math.random()*120,
+        rise: 35,
+        charge: 25,
+        slash: 18,
+        recover: 40+Math.random()*30,
+        formation: 100+Math.random()*80
+      }[this.state];
+    }
+
+    const p  = this.stateT / this.stateDur; // progress 0→1
+    const f  = this.facing;
+
+    // Animate limbs based on state
+    if (this.state === 'idle') {
+      // Breathing + subtle sword sway
+      const breath = Math.sin(this.phase * 1.1) * 0.06;
+      this.armR    = f * (-0.5 + breath);    // kiếm tay phải
+      this.armL    = f * (0.4 + breath * 0.5);
+      this.legL    = Math.sin(this.phase * 0.4) * 0.07;
+      this.legR    = -this.legL;
+      this.bodyLean= breath * 0.3;
+      this.swordAng= -PI * 0.25 + breath * 0.2;
+    } else if (this.state === 'rise') {
+      // Nâng kiếm lên
+      this.armR    = f * lerp(-0.5, -1.2, p);
+      this.armL    = f * lerp(0.4, 0.8, p);
+      this.swordAng= lerp(-PI*0.25, -PI*0.8, p);
+      this.bodyLean= lerp(0, -0.15*f, p);
+    } else if (this.state === 'charge') {
+      // Cúi người chuẩn bị chém
+      const ep = easeIn(p);
+      this.armR    = f * lerp(-1.2, -0.9, ep);
+      this.armL    = f * lerp(0.8, 1.1, ep);
+      this.bodyLean= lerp(-0.15*f, 0.3*f, ep);
+      this.swordAng= lerp(-PI*0.8, -PI*0.5, ep);
+      this.legL    = -0.15;
+      this.legR    = 0.2;
+    } else if (this.state === 'slash') {
+      // CHÉM — arm sweeps fast
+      const ep = easeOut(p);
+      this.armR    = f * lerp(-0.9, 1.4, ep);
+      this.armL    = f * lerp(1.1, -0.3, ep);
+      this.bodyLean= lerp(0.3*f, -0.2*f, ep);
+      this.swordAng= lerp(-PI*0.5, PI*0.55, ep);
+      this.legL    = -0.25;
+      this.legR    = 0.3;
+      // Spawn burst at peak
+      if (p > 0.45 && p < 0.55 && T - this.lastBurst > 0.5) {
+        this.lastBurst = T;
+        this.spawnBurst();
+      }
+    } else if (this.state === 'recover') {
+      const ep = easeOut(p);
+      this.armR    = f * lerp(1.4, -0.5, ep);
+      this.armL    = f * lerp(-0.3, 0.4, ep);
+      this.bodyLean= lerp(-0.2*f, 0, ep);
+      this.swordAng= lerp(PI*0.55, -PI*0.25, ep);
+      this.legL    = lerp(-0.25, 0, ep);
+      this.legR    = lerp(0.3, 0, ep);
+    } else if (this.state === 'formation') {
+      // Kết ấn — hai tay trước mặt, vòng tròn linh khí
+      this.armR    = f * (PI * 0.5 + Math.sin(this.phase * 2) * 0.1);
+      this.armL    = f * (-PI * 0.5 - Math.sin(this.phase * 2) * 0.1);
+      this.swordAng= this.phase * 0.3;  // kiếm xoay nhẹ
+      this.bodyLean= Math.sin(this.phase * 0.8) * 0.05;
+      this.legL    = 0.12;
+      this.legR    = -0.12;
+    }
+
+    // Update aura orbs
+    this.auraOrbs.forEach(o => { o.ang += o.speed * (this.state==='formation'?2.5:1); });
+
+    // Update bursts
+    this.bursts.forEach(b => { b.life -= 0.04; b.r += 1.8; });
+    this.bursts = this.bursts.filter(b => b.life > 0);
+  }
+
+  spawnBurst() {
+    const x  = W * this.xR;
+    const y  = H * this.yR + this.floatY;
+    for (let i = 0; i < 6; i++) {
+      const ang = Math.random() * TAU;
+      this.bursts.push({
+        x: x + Math.cos(ang)*20*this.sc, y: y + Math.sin(ang)*20*this.sc,
+        vx: Math.cos(ang) * (2+Math.random()*3),
+        vy: Math.sin(ang) * (2+Math.random()*3) - 1,
+        life: 1.0, r: 3*this.sc, col: this.acc
+      });
+    }
+  }
+
+  draw() {
+    const bx = W * this.xR;
+    const by = H * this.yR + this.floatY;
+    const sc = this.sc;
+    const f  = this.facing;
+
+    const isFormation = this.state === 'formation';
+    const isSlashing  = this.state === 'slash';
+    const stateGlow   = isSlashing ? 1.3 : isFormation ? 0.9 : 0.6;
+    const baseAlpha   = 0.55 + Math.sin(this.phase) * 0.08;
+
+    ctx.save();
+    ctx.translate(bx, by);
+
+    /* ── Aura orbs ── */
+    if (isFormation || isSlashing) {
+      this.auraOrbs.forEach((o, i) => {
+        const ox = Math.cos(o.ang) * o.r * sc;
+        const oy = Math.sin(o.ang) * o.r * sc * 0.45;
+        const oa = (0.3 + Math.sin(o.phase + T) * 0.2) * (isSlashing ? 1.2 : 0.7);
+        ctx.beginPath();
+        ctx.arc(ox, oy, 3*sc, 0, TAU);
+        ctx.fillStyle = this.col(oa);
+        ctx.shadowColor= this.col(0.5);
+        ctx.shadowBlur = 8*sc;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
+    }
+
+    /* ── Ground shadow (shadow nhân vật) ── */
+    ctx.beginPath();
+    ctx.ellipse(0, 38*sc, 18*sc, 4*sc, 0, 0, TAU);
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.fill();
+
+    /* ── Glow hào quang ── */
+    const glowR = 55*sc;
+    const grad  = ctx.createRadialGradient(0,-10*sc, 0, 0,-10*sc, glowR);
+    grad.addColorStop(0, this.col(0.12 * stateGlow));
+    grad.addColorStop(1, this.col(0));
+    ctx.beginPath();
+    ctx.ellipse(0, -10*sc, glowR, glowR*0.65, 0, 0, TAU);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    ctx.save();
+    ctx.rotate(this.bodyLean);
+
+    const C  = this.col;
+    const A  = this.acc;
+
+    /* ── Áo bào (robe) ── */
+    ctx.beginPath();
+    ctx.moveTo(-9*sc, -18*sc);
+    ctx.lineTo(9*sc,  -18*sc);
+    ctx.lineTo(13*sc,  20*sc);
+    ctx.lineTo(7*sc,   38*sc);
+    ctx.lineTo(-7*sc,  38*sc);
+    ctx.lineTo(-13*sc, 20*sc);
+    ctx.closePath();
+    ctx.fillStyle = C(baseAlpha * 0.9);
+    ctx.shadowColor= C(0.4);
+    ctx.shadowBlur = 10*sc*stateGlow;
+    ctx.fill();
+    // Viền áo
+    ctx.strokeStyle= A(baseAlpha * 0.7);
+    ctx.lineWidth  = 0.8*sc;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Đai thắt lưng
+    ctx.beginPath();
+    ctx.moveTo(-11*sc, 5*sc);
+    ctx.lineTo(11*sc,  5*sc);
+    ctx.strokeStyle= A(baseAlpha * 0.9);
+    ctx.lineWidth  = 2*sc;
+    ctx.stroke();
+
+    // Tà áo bay (flowing robe hem)
+    const robeWave = Math.sin(this.phase * 1.5) * 4;
+    ctx.beginPath();
+    ctx.moveTo(-13*sc, 20*sc);
+    ctx.bezierCurveTo(-18*sc, 28*sc, -16*sc+robeWave, 35*sc, -9*sc, 38*sc);
+    ctx.moveTo(13*sc, 20*sc);
+    ctx.bezierCurveTo(18*sc, 28*sc, 16*sc-robeWave, 35*sc, 9*sc, 38*sc);
+    ctx.strokeStyle= C(baseAlpha * 0.55);
+    ctx.lineWidth  = 1.5*sc;
+    ctx.stroke();
+
+    /* ── Đầu ── */
+    ctx.beginPath();
+    ctx.arc(0, -28*sc, 9*sc, 0, TAU);
+    ctx.fillStyle = C(baseAlpha);
+    ctx.shadowColor= C(0.3);
+    ctx.shadowBlur = 6*sc;
+    ctx.fill();
+    // Mặt gương (viền sáng)
+    ctx.strokeStyle= A(baseAlpha * 0.8);
+    ctx.lineWidth  = 0.7*sc;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Tóc búi (topknot)
+    ctx.beginPath();
+    ctx.arc(f * 2*sc, -37*sc, 4*sc, 0, TAU);
+    ctx.fillStyle  = C(baseAlpha * 1.1);
+    ctx.fill();
+    // Trâm cài đầu
+    ctx.beginPath();
+    ctx.moveTo(f*2*sc, -41*sc);
+    ctx.lineTo(f*2*sc, -47*sc);
+    ctx.strokeStyle= A(0.9);
+    ctx.lineWidth  = 1.2*sc;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(f*2*sc, -48*sc, 2*sc, 0, TAU);
+    ctx.fillStyle  = A(0.9);
+    ctx.fill();
+
+    /* ── Tay trái (giáo liên hoặc tay kết ấn) ── */
+    ctx.save();
+    ctx.translate(-8*sc, -10*sc);
+    ctx.rotate(this.armL);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, 20*sc);
+    ctx.strokeStyle= C(baseAlpha * 0.85);
+    ctx.lineWidth  = 4.5*sc;
+    ctx.lineCap    = 'round';
+    ctx.stroke();
+    // Bàn tay trái
+    ctx.beginPath();
+    ctx.arc(0, 20*sc, 3.5*sc, 0, TAU);
+    ctx.fillStyle  = C(baseAlpha);
+    ctx.fill();
+    if (isFormation) {
+      // Linh khí tụ ở tay
+      ctx.beginPath();
+      ctx.arc(0, 20*sc, 7*sc, 0, TAU);
+      ctx.strokeStyle= A(0.6 + Math.sin(T*4)*0.3);
+      ctx.lineWidth  = 1*sc;
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    /* ── Tay phải (cầm kiếm) ── */
+    ctx.save();
+    ctx.translate(8*sc, -10*sc);
+    ctx.rotate(this.armR);
+    // Cánh tay
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, 22*sc);
+    ctx.strokeStyle= C(baseAlpha * 0.85);
+    ctx.lineWidth  = 4.5*sc;
+    ctx.lineCap    = 'round';
+    ctx.stroke();
+    // Bàn tay
+    ctx.beginPath();
+    ctx.arc(0, 22*sc, 3.5*sc, 0, TAU);
+    ctx.fillStyle  = C(baseAlpha);
+    ctx.fill();
+
+    // KIẾM
+    ctx.translate(0, 22*sc);
+    ctx.rotate(this.swordAng);
+    const sl = 40*sc; // sword length
+
+    // Vệt linh khí theo kiếm khi đang chém
+    if (isSlashing) {
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, sl*1.3);
+      ctx.strokeStyle= A(0.22);
+      ctx.lineWidth  = 14*sc;
+      ctx.lineCap    = 'round';
+      ctx.shadowColor= A(0.5);
+      ctx.shadowBlur = 18*sc;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    // Bảo vệ tay kiếm (guard)
+    ctx.beginPath();
+    ctx.moveTo(-5*sc, 2*sc);
+    ctx.lineTo(5*sc,  2*sc);
+    ctx.strokeStyle= A(baseAlpha * 0.95);
+    ctx.lineWidth  = 2.5*sc;
+    ctx.lineCap    = 'butt';
+    ctx.stroke();
+
+    // Thân kiếm
+    ctx.beginPath();
+    ctx.moveTo(-1.2*sc, 3*sc);
+    ctx.lineTo(0, sl+2*sc);        // đầu kiếm nhọn
+    ctx.lineTo(1.2*sc, 3*sc);
+    ctx.closePath();
+    const bladeGrad = ctx.createLinearGradient(0, 3*sc, 0, sl);
+    bladeGrad.addColorStop(0, C(baseAlpha));
+    bladeGrad.addColorStop(0.5, WHITE(baseAlpha * 1.2));
+    bladeGrad.addColorStop(1, A(baseAlpha * 0.8));
+    ctx.fillStyle  = bladeGrad;
+    ctx.shadowColor= A(isSlashing ? 0.8 : 0.3);
+    ctx.shadowBlur = isSlashing ? 20*sc : 6*sc;
+    ctx.fill();
+    // Đường sáng giữa kiếm
+    ctx.beginPath();
+    ctx.moveTo(0, 5*sc);
+    ctx.lineTo(0, sl-4*sc);
+    ctx.strokeStyle= WHITE(0.7);
+    ctx.lineWidth  = 0.6*sc;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Tay cầm
+    ctx.beginPath();
+    ctx.moveTo(-2*sc, 0);
+    ctx.lineTo(-2*sc, -12*sc);
+    ctx.lineTo(2*sc,  -12*sc);
+    ctx.lineTo(2*sc,  0);
+    ctx.closePath();
+    ctx.fillStyle  = C(baseAlpha * 0.8);
+    ctx.fill();
+    ctx.strokeStyle= A(0.5);
+    ctx.lineWidth  = 0.5*sc;
+    ctx.stroke();
+
+    ctx.restore(); // arm R
+
+    /* ── Chân ── */
+    // Chân trái
+    ctx.save();
+    ctx.translate(-5*sc, 20*sc);
+    ctx.rotate(this.legL);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, 20*sc);
+    ctx.strokeStyle= C(baseAlpha * 0.75);
+    ctx.lineWidth  = 5*sc;
+    ctx.lineCap    = 'round';
+    ctx.stroke();
+    ctx.restore();
+
+    // Chân phải
+    ctx.save();
+    ctx.translate(5*sc, 20*sc);
+    ctx.rotate(this.legR);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, 20*sc);
+    ctx.strokeStyle= C(baseAlpha * 0.75);
+    ctx.lineWidth  = 5*sc;
+    ctx.lineCap    = 'round';
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.restore(); // body lean
+    ctx.restore(); // translate
+
+    /* ── Ki bursts ── */
+    this.bursts.forEach(b => {
+      if (b.life <= 0) return;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r, 0, TAU);
+      ctx.fillStyle = b.col(b.life * 0.8);
+      ctx.shadowColor= b.col(0.5);
+      ctx.shadowBlur = 8;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      b.x += b.vx; b.y += b.vy; b.vy -= 0.1;
+    });
+  }
+}
+
+/* ── Easing helpers ── */
+function lerp(a, b, t) { return a + (b - a) * Math.max(0, Math.min(1, t)); }
+function easeIn(t)  { return t * t; }
+function easeOut(t) { return 1 - (1-t)*(1-t); }
+
+/* ══════════════════════════════
+   8. TIÊN NHÂN KẾT TRẬN — Formation master
+   Nhân vật ngồi thiền, hai tay kết ấn, vòng linh khí xoay quanh
+══════════════════════════════ */
+class FormationMaster {
+  constructor(xRatio, yRatio, color, accentColor) {
+    this.xR   = xRatio;
+    this.yR   = yRatio;
+    this.col  = color;
+    this.acc  = accentColor;
+    this.phase= Math.random() * TAU;
+    this.sc   = 0.68 + Math.random() * 0.2;
+    // Vòng trận pháp xung quanh nhân vật
+    this.myRings = [
+      { r: 38, speed: 0.022, runes: 6, dashOff: 0 },
+      { r: 55, speed:-0.014, runes: 8, dashOff: 0 },
+      { r: 72, speed: 0.009, runes: 12, dashOff: 0 },
+    ];
+    this.myRings.forEach(r => { r.ang = Math.random()*TAU; });
+    // Linh khí particles quanh người
+    this.localQi = Array.from({length: 12}, (_, i) => ({
+      ang: (i/12)*TAU, r: 42+Math.random()*20, speed: 0.03+Math.random()*0.02,
+      phase: Math.random()*TAU, size: 1.5+Math.random()*1.5
+    }));
+    this.floatY = 0;
+    this.meditateDepth = 0; // 0 = normal, 1 = deep
+    this.breathPhase = 0;
+  }
+
+  update() {
+    this.phase += 0.014;
+    this.breathPhase += 0.022;
+    this.floatY = Math.sin(this.phase * 0.5) * 6;
+    this.meditateDepth = (Math.sin(this.phase * 0.3) * 0.5 + 0.5);
+    this.myRings.forEach(r => { r.ang += r.speed; r.dashOff += r.speed * 2; });
+    this.localQi.forEach(q => { q.ang += q.speed; });
+  }
+
+  draw() {
+    const bx = W * this.xR;
+    const by = H * this.yR + this.floatY;
+    const sc = this.sc;
+    const C  = this.col;
+    const A  = this.acc;
+    const md = this.meditateDepth;
+    const breath = Math.sin(this.breathPhase) * 0.5 + 0.5;
+
+    ctx.save();
+    ctx.translate(bx, by);
+
+    /* ── Vòng trận pháp ── */
+    this.myRings.forEach((r, ri) => {
+      ctx.save();
+      ctx.rotate(r.ang);
+      ctx.setLineDash([6, 5]);
+      ctx.lineDashOffset = r.dashOff;
+
+      ctx.beginPath();
+      ctx.arc(0, 0, r.r*sc, 0, TAU);
+      ctx.strokeStyle = ri===1 ? A(0.18 + md*0.12) : C(0.15 + md*0.10);
+      ctx.lineWidth   = 0.7;
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Rune dots
+      for (let i = 0; i < r.runes; i++) {
+        const ang = (i/r.runes)*TAU;
+        const rx  = Math.cos(ang)*r.r*sc;
+        const ry  = Math.sin(ang)*r.r*sc*0.55;
+        ctx.beginPath();
+        ctx.arc(rx, ry, 2*sc, 0, TAU);
+        ctx.fillStyle = ri===1 ? A(0.5+md*0.4) : C(0.4+md*0.3);
+        ctx.shadowColor= ri===1 ? A(0.6) : C(0.5);
+        ctx.shadowBlur = 5*sc;
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+
+      // Hexagram lines (outer ring)
+      if (ri === 2) {
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+          const a1 = (i/6)*TAU;
+          const a2 = ((i+3)/6)*TAU;
+          ctx.moveTo(Math.cos(a1)*r.r*sc, Math.sin(a1)*r.r*sc*0.55);
+          ctx.lineTo(Math.cos(a2)*r.r*sc, Math.sin(a2)*r.r*sc*0.55);
+        }
+        ctx.strokeStyle = A(0.12+md*0.1);
+        ctx.lineWidth   = 0.5;
+        ctx.stroke();
+      }
+      ctx.restore();
+    });
+
+    /* ── Qi orbs xung quanh ── */
+    this.localQi.forEach(q => {
+      const qx = Math.cos(q.ang)*q.r*sc;
+      const qy = Math.sin(q.ang)*q.r*sc*0.5;
+      const qa = 0.35 + Math.sin(q.phase+T*2)*0.25;
+      ctx.beginPath();
+      ctx.arc(qx, qy, q.size*sc, 0, TAU);
+      ctx.fillStyle = q.ang % 1 > 0.5 ? C(qa) : A(qa);
+      ctx.shadowColor= C(0.5);
+      ctx.shadowBlur = 6*sc;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+
+    /* ── Glow hào quang thiền định ── */
+    const haloR = (50 + md*20)*sc;
+    const halo  = ctx.createRadialGradient(0,-10*sc,0, 0,-10*sc,haloR);
+    halo.addColorStop(0, C(0.14+md*0.1));
+    halo.addColorStop(1, C(0));
+    ctx.beginPath();
+    ctx.ellipse(0, -10*sc, haloR, haloR*0.6, 0, 0, TAU);
+    ctx.fillStyle = halo;
+    ctx.fill();
+
+    /* ── Tư thế ngồi thiền (lotus) ── */
+    ctx.save();
+    // Bóng đổ
+    ctx.beginPath();
+    ctx.ellipse(0, 32*sc, 22*sc, 5*sc, 0, 0, TAU);
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+    ctx.fill();
+
+    // Chân xếp bằng
+    ctx.beginPath();
+    ctx.ellipse(-8*sc, 24*sc, 12*sc, 7*sc, -0.3, 0, TAU);
+    ctx.fillStyle = C(0.55);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(8*sc, 24*sc, 12*sc, 7*sc, 0.3, 0, TAU);
+    ctx.fillStyle = C(0.5);
+    ctx.fill();
+
+    // Áo bào phồng
+    ctx.beginPath();
+    ctx.moveTo(-12*sc, -16*sc);
+    ctx.bezierCurveTo(-16*sc, 5*sc, -20*sc, 20*sc, -10*sc, 26*sc);
+    ctx.bezierCurveTo(-2*sc, 30*sc, 2*sc, 30*sc, 10*sc, 26*sc);
+    ctx.bezierCurveTo(20*sc, 20*sc, 16*sc, 5*sc, 12*sc, -16*sc);
+    ctx.closePath();
+    ctx.fillStyle = C(0.6 + breath*0.08);
+    ctx.shadowColor= C(0.35);
+    ctx.shadowBlur = 12*sc*(0.6+md*0.5);
+    ctx.fill();
+    ctx.strokeStyle= A(0.5);
+    ctx.lineWidth  = 0.8*sc;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Đai thắt lưng
+    ctx.beginPath();
+    ctx.moveTo(-12*sc, 4*sc);
+    ctx.lineTo(12*sc, 4*sc);
+    ctx.strokeStyle= A(0.7);
+    ctx.lineWidth  = 2*sc;
+    ctx.stroke();
+
+    // Tay trái — kết ấn trước bụng
+    ctx.save();
+    ctx.translate(-7*sc, 5*sc);
+    ctx.rotate(PI*0.55);
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.lineTo(0, 16*sc);
+    ctx.strokeStyle= C(0.65);
+    ctx.lineWidth  = 4*sc;
+    ctx.lineCap    = 'round';
+    ctx.stroke();
+    // Bàn tay — tụ linh khí
+    ctx.beginPath();
+    ctx.arc(0, 17*sc, 3.5*sc, 0, TAU);
+    ctx.fillStyle = C(0.7);
+    ctx.fill();
+    // Vòng linh khí tụ
+    ctx.beginPath();
+    ctx.arc(0, 17*sc, 8*sc, 0, TAU);
+    ctx.strokeStyle= A(0.4+breath*0.4);
+    ctx.lineWidth  = 1.2*sc;
+    ctx.shadowColor= A(0.7);
+    ctx.shadowBlur = 10*sc;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    // Tay phải — kết ấn
+    ctx.save();
+    ctx.translate(7*sc, 5*sc);
+    ctx.rotate(-PI*0.55);
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.lineTo(0, 16*sc);
+    ctx.strokeStyle= C(0.65);
+    ctx.lineWidth  = 4*sc;
+    ctx.lineCap    = 'round';
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 17*sc, 3.5*sc, 0, TAU);
+    ctx.fillStyle = C(0.7);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0, 17*sc, 8*sc, 0, TAU);
+    ctx.strokeStyle= C(0.4+breath*0.4);
+    ctx.lineWidth  = 1.2*sc;
+    ctx.shadowColor= C(0.7);
+    ctx.shadowBlur = 10*sc;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    // Đầu — hơi cúi thiền
+    ctx.save();
+    ctx.translate(0, -23*sc);
+    ctx.rotate(0.12); // cúi nhẹ
+    ctx.beginPath();
+    ctx.arc(0, 0, 9*sc, 0, TAU);
+    ctx.fillStyle = C(0.65);
+    ctx.shadowColor= C(0.3);
+    ctx.shadowBlur = 8*sc;
+    ctx.fill();
+    ctx.strokeStyle= A(0.6);
+    ctx.lineWidth  = 0.7*sc;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    // Tóc búi
+    ctx.beginPath();
+    ctx.arc(0, -9*sc, 4.5*sc, 0, TAU);
+    ctx.fillStyle = C(0.7);
+    ctx.fill();
+    // Trâm
+    ctx.beginPath();
+    ctx.moveTo(0,-13*sc);
+    ctx.lineTo(0,-20*sc);
+    ctx.strokeStyle= A(0.9);
+    ctx.lineWidth  = 1.2*sc;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0,-21*sc, 2.2*sc, 0, TAU);
+    ctx.fillStyle = A(0.95);
+    ctx.fill();
+    ctx.restore();
+
+    /* ── Tia linh khí bắn ra từ trận pháp ── */
+    if (md > 0.6) {
+      for (let i = 0; i < 4; i++) {
+        const beamAng = (i/4)*TAU + T * 0.4;
+        const bx2 = Math.cos(beamAng)*72*sc;
+        const by2 = Math.sin(beamAng)*72*sc*0.55;
+        ctx.beginPath();
+        ctx.moveTo(0, -5*sc);
+        ctx.lineTo(bx2, by2);
+        ctx.strokeStyle= A((md-0.6)*0.6);
+        ctx.lineWidth  = 1.5*sc;
+        ctx.shadowColor= A(0.6);
+        ctx.shadowBlur = 10*sc;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+    }
+
+    ctx.restore();
+    ctx.restore();
+  }
+}
+
+/* ══════════════════════════════
+   KHỞI TẠO NHÂN VẬT
+══════════════════════════════ */
+// 3 kiếm khách — vị trí hai bên + giữa cao
+const swordMasters = [
+  new SwordMaster(0.12, 0.72, 1,  GOLD,   GOLD2),   // trái — vàng kim
+  new SwordMaster(0.88, 0.68, -1, JADE,   JADE2),   // phải — ngọc bích
+  new SwordMaster(0.5,  0.88, 1,  CRIM,   PURPLE),  // giữa thấp — huyết kiếm
+];
+
+// 2 tiên nhân kết trận — hai bên
+const formationMasters = [
+  new FormationMaster(0.18, 0.52, JADE, GOLD),     // trái thiền định
+  new FormationMaster(0.82, 0.48, PURPLE, CRIM),   // phải thiền định
+];
+
+/* ══════════════════════════════
    MAIN DRAW LOOP
 ══════════════════════════════ */
 let lastSlash = 0;
@@ -1360,7 +2069,11 @@ function draw() {
     ctx.fill();
   });
 
-  /* 6 ── Slash effects (kiếm khí) */
+  /* 6 ── Human figures */
+  formationMasters.forEach(fm => { fm.update(); fm.draw(); });
+  swordMasters.forEach(sm => { sm.update(); sm.draw(); });
+
+  /* 7 ── Slash effects (kiếm khí) */
   if (T - lastSlash > 1.8 + Math.random() * 2.5) {
     spawnSlash();
     lastSlash = T;
